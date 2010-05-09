@@ -1,0 +1,178 @@
+# CodeInCards - adds Python code embedding to cards/card templates
+# 
+# http://ichi2.net/anki/wiki/ModelProperties#Card_Templates
+#
+# Escape syntax blah
+#  * $functionName(arg, arg, ...) - simplest, least flexible, arrogant about other brackets on the line; remember, dollars don't nest!
+#  * {%= %} - more flexible - evaluates expressions (not statements) and substitutes result
+#  * {% %} - most flexible - executes statements; anything you want substituted you just print or assign to 'result'
+# The bracketed forms can span multiple lines.
+# FIXME dnl?  Maybe terminate multiline with a dot or # or // instead?
+#
+# A small sample function library is included (see default.py in plugins/CodeInCards/).  It's documented fully there, but for example:
+#  $ifne, $a, $pickQ, $pickA
+# 
+# Caveats:
+#  This module is a gaping security hole if you ever import cards from untrusted sources.
+#  You do need to know some Python to use anything but the sample library, otherwise you'll be unable to fix the inevitable syntax errors.
+#
+# FIXME: reloads without restarts
+#
+# Supported constructs: (* indicates stuff actually implemented)
+#
+#   &amp;alpha;
+#     replaced with Unicode symbol named by the HTML entity; works for all entities
+#     allows you to just type &beta; into the editor
+#   dnl
+#     discard text up to newline, like m4 does; removes <br/> inserted by HTML widget
+# * $a(<text>)
+# *   almost just a shortcut for $class(<text>, ".answer"), except only applies the style if text appears on the answer side of the card
+#   $class(<text>, <class>)
+#     applies CSS class to text, as defined in either the card template or an external stylesheet called ss.css in the plugins directory
+# * $ifq(<text>)
+# *   shows text only if part of the question side of the card
+# * $ifa(<text>)
+# *   shows text only if part of the answer side of the card
+# * $ifne(<fmt>, <text>)
+# *   shows formatted text only if raw text is not empty;
+# *   use "$s" inside the format to substitute text
+#   $rcsl(orange, apple, pear tree, honey bee)
+#     randomises the order of the given comma-separated list
+#   $rorl(go big, go home)
+#     randomises the order of the given comma-separated list, but uses "or" between the final two items
+#   $randl(swings, roundabouts)
+#     randomises the order of the given comma-separated list, but uses "and" between the final two items
+#   $pick(woven, trabecular, cancellous, spongy)
+#     randomly pick any of a list of strings; also sets a variable for use by...
+#   $pick2(woven, trabecular, cancellous, spongy)
+#     pick the same indexed thing as was picked by $pick(...);
+#     this allows a random choice to be made once then used in both question and answer
+# * $list(<yaml>)
+# *   HTML-ify a yaml structure to make a list, seeing as QT can't leave 'em the fuck alone
+#   $rlist(<yaml>)
+#     same as $list but randomises the 1st-level order
+# * {{ <python> }}
+# *   run arbitrary python embedded within a card;
+# *   if you don't split it across multiple lines it's assumed to be at indent level 0
+# *   card object is available as variable 'card'
+# *   question or answer is available as variable 'qora' which is simply the string 'q' or 'a'
+# *   shared state can be communicated from question to answer; in question, use:
+# *     ss["varname"] = 123
+# *   and in answer just use ss["varname"]
+# *   values get recalculated at each display of question - this messes up redisplays e.g. after in-review edits
+# *   with palindromic questions it's probably easiest to use a separate symbol for each direction
+# *   anything printed gets interpolated into the resulting HTML
+# * {{= <python expression> }}
+# *   evaluate a python expression and interpolate the result into the HTML
+#      
+
+import sys
+from types import *
+import re
+import htmlentitydefs
+
+from anki.hooks import addHook
+
+sys.path.append("/opt/local/Library/Frameworks/Python.framework/Versions/2.6/lib/python2.6/site-packages/")
+import yaml
+
+# Keeping state variables in here between question and answer minimises pollution of the global namespace.
+ss = {}
+
+def addStyles(curStyles, card):
+        return curStyles + "\n .answerHighlight {color:blue; font-weight:bold; }"
+
+def alterQuestion(html, card):
+        return alter(html, card, "q")
+
+def alterAnswer(html, card):
+        return alter(html, card, "a")
+
+class StringWriter:
+        # Impersonates sys.stdout, accumulating the write()n strings
+        s = ""
+        def write(self, str):
+                self.s += str
+
+def ent_subst(match):
+        return unichr(htmlentitydefs.name2codepoint[match.group('entname')])
+
+def list_subst(match):
+        li = re.sub("<br\s*/?>", "\n", match.group('listyaml'))
+        yli = yaml.load(li)
+        return html_list(yli)
+
+def html_list(list):
+        html = "<ul>"
+        for e in list:
+                if type(e) is ListType:
+                        html += html_list(e)
+                elif type(e) is StringType:
+                        html += "<li>%s</li>" % (e)
+        html += "</ul>"
+        return html
+                
+
+def alter(html, card, qora):
+        # html is what Anki has already generated
+        # card is a card!
+        # qora is "am I altering a Question's OR an Answer's HTML?", and takes just "q" or "a"
+        
+
+        html = re.sub("&amp;(?P<entname>.*?);", ent_subst, html)
+
+
+        if qora == "a":
+                # Style is from addStyles hook.  FIXME: should get from file in plugins dir
+                html = re.sub("\$a\((?P<text>.*?)\)", "<span class='answerHighlight'>\g<text></span>", html)
+                html = re.sub("\$ifq\((?P<text>.*?)\)", "", html)
+                html = re.sub("\$ifa\((?P<text>.*?)\)", "\g<text>", html)
+        else:
+                html = re.sub("\$a\((?P<text>.*?)\)", "\g<text>", html)
+                html = re.sub("\$ifq\((?P<text>.*?)\)", "\g<text>", html)
+                html = re.sub("\$ifa\((?P<text>.*?)\)", "", html)
+        
+        while True:
+                match = re.search("\$ifne\((?P<fmt>.*?), (?P<text>.*?)\)", html)
+                if match and match.group('text') != "":
+                        fmt = match.group('fmt')
+                        fmt = re.sub("\$s", match.group('text'), fmt)
+                        html = re.sub("\$ifne\(.*?\)", fmt, html)
+                else:
+                        html = re.sub("\$ifne\(.*?\)", "", html)
+                        break
+
+        html = re.sub("\$list\((?P<listyaml>.*?)\)", list_subst, html)
+
+        # Capture the scope for use in closure's exec, otherwise it'll use closure's own scope.
+        outerLocals = locals()
+
+        # Closure for code evaluation/substitution
+        def code_subst(match):
+                code = match.group('code')
+                code = re.sub("<br\s*/?>", "\n", code)
+                # Scrub all other HTML from the code.  This is safe because widget will already have escaped HTML so deliberate tags will be wrapped in &lt; etc.
+                code = re.sub("<[^>]+>", "", code)
+                swriter = StringWriter()
+                oldstdout = sys.stdout
+                sys.stdout = swriter
+                # '=' prefix means implicit 'print' of following expression
+                if re.match("=", code):
+                        code = re.sub("^=(?P<expr>.*)", "print (\g<expr>),", code)
+                exec code in globals(), outerLocals 
+                sys.stdout = oldstdout
+                return swriter.s
+        html = re.sub("{{\s*(?P<code>.*?)}}", code_subst, html)
+
+        html = re.sub("dnl.*?<br\s*/?>", "", html)
+        html = re.sub("dnl", "", html)
+
+        html = re.sub("&lt;", "<", html)
+        html = re.sub("&gt;", ">", html)
+        return html
+
+addHook("drawQuestion", alterQuestion)
+addHook("drawAnswer", alterAnswer)
+addHook("addStyles", addStyles)
+
+# vim: softtabstop=8 shiftwidth=8 expandtab
