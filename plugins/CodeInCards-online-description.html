@@ -1,87 +1,133 @@
-CodeInCards - a plugin to embed Python code in cards/card templates
- 
-Loads substition "libraries" from <pre>%pluginsFolder%/CodeInCards/*.py</pre>
+<h3>CodeInCards - a plugin to embed Python code in cards/card templates</h3>
+<p> 
+Loads substition "libraries" of functions and variables from <span style="font-family:Courier,monospace">%pluginsFolder%/CodeInCards/*.py</span>
 then provides syntax to let you substitute library calls into cards.
+</p>
 
+<p>
 Escapes may be included either encoded as HTML or among the markup
 (i.e. you can enter them directly in the browser-editor field, or the
 "HTML editor".  Four escape formats are supported; the first pair
 values brevity over flexibility:
+</p>
 
-<pre>
+<p>
+  <div style="color:blue; margin-left:3em; font-family:Courier,monospace">
   $varName
+  </div>
+  <div style="margin-left:6em">
     Interpolate variable "varName".  Subscripting and dot-whatever
     isn't supported (yet!) but you can use another format.
+  </div>
+</p>
 
-  $functionName(arg, arg, ...)
-    Call "fuctionName" with supplied args, and interpolate the returned
+<p>
+  <div style="color:blue; margin-left:3em; font-family:Courier,monospace">
+  $functionName(...)
+  </div>
+  <div style="margin-left:6em">
+    Invoke <span style="font-family:Courier,monospace">functionName</span> with the supplied args, and interpolate the returned
     string, e.g.:
+  </div>
+  <div style="margin-left:9em; margin-top:1em; margin-bottom:1em; font-family:Courier,monospace">
       $myFunc(myVar, "another arg")
-    Some things won't work:
-      * brackets aren't allowed anywhere in args, so you can't say:
-          $functionName("a (broken) example")
-      * it's very greedy with the args, so this needs to be split
-        across lines: $firstCall("foo") some plain text
-          $secondCall("bar")
-    You must also be careful with quotes around arguments.  Single
-    quotes work best.
-</pre>
+  </div>
+  <div style="margin-left:6em">
+    Closing brackets aren't allowed anywhere in args, so you can't say:
+  </div>
+    <div style="margin-left:9em; margin-top:1em; margin-bottom:1em; font-family:Courier,monospace">
+      $functionName("a (broken) example")
+    </div>
+  <div style="margin-left:6em">
+    You must also be careful with quotes around arguments.  Single quotes work better than doubles.
+  </div>
+</p>
 
+<p>
 The second pair is more flexible but more verbose:
+</p>
 
-<pre>
+<p>
+  <div style="color:blue; margin-left:3em; font-family:Courier,monospace">
   {%= &lt;expression&gt; %}
+  </div>
+  <div style="margin-left:6em">
     Evaluates &lt;expression&gt; (a single expression) and substitutes
-    result, e.g.:
+    result.  For example:
+  </div>
+  <div style="margin-left:9em; margin-top:1em; margin-bottom:1em; font-family:Courier,monospace">
       {%= 6 * 9 %}
+  </div>
+  <div style="margin-left:6em">
     will yield "42" in the card or template (well, OK, "54").  Function
-    calls also work, e.g.:
+    calls also work (brackets and all), e.g.:
+  </div>
+  <div style="margin-left:9em; margin-top:1em; margin-bottom:1em; font-family:Courier,monospace">
       {%= functionName("a (working) example", someOtherFunc()) %}
+  </div>
+</p>
 
+<p>
+  <div style="color:blue; margin-left:3em; font-family:Courier,monospace">
   {% &lt;code&gt; %}
-    Executes &lt;code&gt; anything printed to stdout gets substituted, e.g.:
-      {%
-      if random.randint(0, 1000000) == 42:
-        print "The Ultimate Answer!"
-      %}
-</pre>
+  </div>
+  <div style="margin-left:6em">
+    Executes &lt;code&gt;.  Anything printed to <span style="font-family:Courier,monospace">sys.stdout</span> gets substituted, e.g.:
+  </div>
+  <div style="margin-left:9em; margin-top:1em; margin-bottom:1em; font-family:Courier,monospace">
+      {%<br/>
+      if random.randint(0, 1000000) == 42:<br/>
+      <span style="white-space:pre">        print "The Ultimate Answer!"</span><br/>
+      %}<br/>
+  </div>
+</p>
 
+<p>
 Apart from globals in your libraries you can also use the following
 symbols:
-<pre>
-   QorA - 'q' or 'a', depending what card side is being rendered
-   card - the card being rendered; see the Anki source
-</pre>
+</p>
+<dl style="margin-left:3em;">
+  <dt style="font-weight:bold; font-family:Courier,monospace">QorA</dt>
+  <dd>'q' or 'a', depending what card side is being rendered</dd>
+  <dt style="font-weight:bold; font-family:Courier,monospace">card</dt>
+  <dd>the card being rendered; see the Anki source</dd>
+</dl>
 
+<p>
 Compile errors get interpolated as HTML-ized strings.
+<p>
 
-The string '&lt;br /&gt; is removed from within code if present before
-executione.  This allows you to add code in the card editor as well as
+<p>
+The string "&lt;br /&gt;" is removed from within code if present before
+execution.  This allows you to add code in the card editor as well as
 card templates but means you can't include a BR in an escape.  If
 that matters to you, define a variable in your library called "BR" and
 use than in place of "&lt;br/&gt;  No other HTML is removed, so be careful
 not to style any part of an escape entered in an card editor field.
+</p>
 
-Get a small example library here:<pre>
-<a href="http://bit.ly/codeincards">http://bit.ly/codeincards</a>
-<pre>then save it in %pluginsFolder%/CodeInCards/ and read it to see some
+<p>
+You can find a small example library at <a href="http://bit.ly/codeincards">http://bit.ly/codeincards</a>.
+Save it in <span style="font-family:Courier,monospace">%pluginsFolder%/CodeInCards/</span> and read it to see some
 trivial examples.
+</p>
  
-<pre>
+<p>
 Caveats:
-  - This module is a gaping security hole if you ever import cards from
-    untrusted sources.
-  - At the moment there's no way to prevent the escapes appearing in the
-    browser, so cards start to look quite ugly.
-  - It's too easy to get carried away and implement your own SRS
-    mini-language packed with syntactic sugar.
-</pre>
+</p>
+<ul>
+  <li>This module is a gaping security hole if you ever import cards from untrusted sources.</li>
+  <li>At the moment there's no way to prevent the escapes appearing in the browser, so cards start to look quite ugly.</li>
+  <li>It's too easy to get carried away and implement your own SRS mini-language packed with syntactic sugar.</li>
+</ul>
 
-TODO: add individual fact fields alongside QorA and card in a dict
-  (need to marry up card.fact.values with card.model.names)<br/>
-TODO: implement m4's 'dnl' feature - perhaps by terminating a
-  multiline with "%}." instead of "%}"<br/>
-TODO: reload libraries without restarting Anki<br/>
-TODO: support $foo['index'] and maybe $foo.bar and $foo.bar()<br/>
-TODO: remove escapes from browser; there's no hook, but a sick hack
-  might be to wrap stripHTML()<br/>
+<p>
+TODO:
+</p>
+<ul>
+  <li>add individual fact fields alongside <span style="font-family:Courier,monospace;">QorA</span> and <span style="font-family:Courier,monospace">card</span> in a dict (need to marry up <span style="font-family:Courier,monospace">card.fact.values</span> with <span style="font-family:Courier,monospace">card.model.names</span>)</li>
+  <li>implement m4's '<span style="font-family:Courier,monospace">dnl</span>' feature - perhaps by terminating a multiline with "<span style="font-family:Courier,monospace">%}.</span>" instead of "<span style="font-family:Courier,monospace">%}</span>"</li>
+  <li>reload libraries without restarting Anki</li>
+  <li>support <span style="font-family:Courier,monospace">$foo['index']</span> and maybe <span style="font-family:Courier,monospace">$foo.bar</span> and <span style="font-family:Courier,monospace">$foo.bar()</span></li>
+  <li>remove escapes from browser; there's no hook, but a sick hack might be to wrap <span style="font-family:Courier,monospace">stripHTML()</li>
+</ul>
