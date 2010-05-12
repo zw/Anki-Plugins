@@ -105,6 +105,8 @@ class TypedTextImporter(anki.importing.Importer):
                                         if self.curState not in ('collecting_globals', 'between_facts'):
                                                 raise ImportFormatError(type="systemError", info="file terminated unexpectedly in state " + self.curState)
                                         break
+                                line = re.sub("#.*$", "", line)
+                                logging.debug("line with comments removed: " + line)
                                 line = line.rstrip("\n\r")
                                 logging.debug("stripped line: " + line)
                                 if line == "__END__":
@@ -113,8 +115,6 @@ class TypedTextImporter(anki.importing.Importer):
                                         # return whatever we've gathered so far, but flag so that we don't re-enter the state machine next time we get called
                                         self.iHaveSeenTheEnd = True
                                         break
-                                line = re.sub("#.*$", "", line)
-                                logging.debug("line with comments removed: " + line)
                                 logging.debug("state is " + self.curState)
 
                         if self.curState == 'collecting_globals':
