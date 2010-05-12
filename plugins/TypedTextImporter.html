@@ -53,7 +53,7 @@ so I rolled yet another one to meet my needs.
 </p>
 
 <p>
-A commented example is probably the best documentation.  Click this <button type="button" onclick="hideImpComm()">button</button> to toggle the purely explanatory comments.
+A commented example is probably the best documentation.  Click this <button type="button" onclick="hideImpComm()">button</button> to toggle the purely explanatory comments.  You can <a href="TypedTextImporterSample.txt">download this sample</a> if you want.
 </p>
 <div class="code"><span class="impcomm"># Comments are allowed anywhere and start with '#'.<br/>
 # Trailing whitespace is discarded from all lines.<br/>
@@ -110,10 +110,10 @@ t: clinicaltests <span class="impcomm"># like this</span>
 m: One way
 # question, answer, context, mnemonic, source
 
-<span class="impcomm"># You can also include lists in YAML format.<br/>
-# They'll get converted to HTML in the card.<br/>
+<span class="impcomm"># You can also include lists in YAML format.  They'll get converted to HTML lists.<br/>
 # A list element of "- t: some text" will break the list, include "some text" and restart it.<br/>
-# A list element of "- I forgot this was YAML:" will do the same with "I forgot..."<br/></span>List the conditions in "Virchow's triad" of thrombosis risk.
+# A list element of "- I forgot this was YAML:" (trailing colon) will just include "I forgot..." as list item.<br/>
+# That's only noteworthy because YAML interprets it as a hash.<br/></span>List the conditions in "Virchow's triad" of thrombosis risk.
 ---
 - vessel wall changes (esp. atheroma)
 - flow changes (esp. turbulent)
