@@ -100,15 +100,15 @@ class TypedTextImporter(anki.importing.Importer):
                                 logging.debug("post-sub: " + self.curState)
                         else:
                                 line = self.fh.readline()
-                                logging.debug("pristine line: " + line)
+                                logging.debug("pristine line: '''" + line + "'''")
                                 if line == "":
                                         if self.curState not in ('collecting_globals', 'between_facts'):
                                                 raise ImportFormatError(type="systemError", info="file terminated unexpectedly in state " + self.curState)
                                         break
                                 line = re.sub("#.*$", "", line)
-                                logging.debug("line with comments removed: " + line)
-                                line = line.rstrip("\n\r")
-                                logging.debug("stripped line: " + line)
+                                logging.debug("line with comments removed: '''" + line + "'''")
+                                line = line.rstrip()
+                                logging.debug("stripped line: '''" + line + "'''")
                                 if line == "__END__":
                                         if self.curState not in ('collecting_globals', 'between_facts'):
                                                 raise ImportFormatError(type="systemError", info="file terminated unexpectedly in state " + self.curState)
