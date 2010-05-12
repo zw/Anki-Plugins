@@ -1,0 +1,22 @@
+div.code {
+  margin-left:2em;
+  padding:1em;
+  background-color:#e0e6ff;
+  border-style:dashed;
+  font-family:monospace;
+  white-space:pre;
+}
+
+.impcomm {
+  color:red;
+  font-style:italic;
+  white-space:normal;
+}
+
+.hidden{
+  display:none;
+}
+
+.shown{
+  display:block;
+}
