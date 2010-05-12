@@ -1,25 +1,30 @@
 # Adds an importer for the rough text files I create cards from.
-#
-# TODO: implement the list-creating thingy at this level with YAML
-# TODO: consider what else could be done more efficiently now we have code at this point.
 
 import sys
 import re
-import logging
-LOG_FILENAME = '/tmp/logging_example.out'
-logging.basicConfig(filename=LOG_FILENAME,level=logging.DEBUG)
 from types import *
+#import logging
+#LOG_FILENAME = '/tmp/logging_example.out'
+#logging.basicConfig(filename=LOG_FILENAME,level=logging.DEBUG)
 
+QMI_FILE = u"/Users/zak/stuff/medicine/SRS scratchpad.txt"
+IMPORT_KEY=u"Z"
+YAML_PATH = "/opt/local/Library/Frameworks/Python.framework/Versions/2.6/lib/python2.6/site-packages/"
+
+sys.path.append(YAML_PATH)
+import yaml
 
 from anki.errors import ImportFormatError
 import anki.importing
 from anki.importing import ForeignCard
 from anki.deck import NEW_CARDS_RANDOM
 
-sys.path.append("/opt/local/Library/Frameworks/Python.framework/Versions/2.6/lib/python2.6/site-packages/")
-import yaml
+from ankiqt import mw
+from ankiqt.ui import utils
+from ankiqt.ui.importing import ImportDialog
+import ankiqt
 
-class ZakImporter(anki.importing.Importer):
+class QuickMultiImporter(anki.importing.Importer):
         needMapper = False
         def __init__(self, deck, file):
                 anki.importing.Importer.__init__(self, deck, file)
@@ -27,9 +32,8 @@ class ZakImporter(anki.importing.Importer):
                 self.iHaveSeenTheEnd = False
 
         def doImport(self):
-                "Import."
                 random = self.deck.newCardOrder == NEW_CARDS_RANDOM
-                # This gets wiped by needMapper interpretation if set much earlier than here.
+                # This gets wiped by needMapper processing if set much earlier than here.
                 self.tagDuplicates = True
                 try:
                         self.fh = open(self.file, "r")
@@ -49,6 +53,7 @@ class ZakImporter(anki.importing.Importer):
                                 if random:
                                         self.deck.randomizeNewCards(self.cardIds)
                         self.deck.setModified()
+                self.fh.close()
 
         def html_list(self, list, level=0):
                 html = "<ul>"
@@ -62,7 +67,7 @@ class ZakImporter(anki.importing.Importer):
                                         # Explicitly, "- t: include this line outside any list" => break list, insert text, restart list
                                         html += "</ul><p>%s</p><ul>" % (e['t'])
                                 else:
-                                        # Implicitly, "- the following are all signs of gout:" => treat key name as just another list item
+                                        # Implicitly, "- signs of gout:" => treat key name as just another list item
                                         # Allows you to forget about the Yaml-ness, accidentally use a trailing colon and still DWIM
                                         html += "<li>%s</li>" % (e.popitem()[0])
                 html += "</ul>"
@@ -252,38 +257,18 @@ class ZakImporter(anki.importing.Importer):
         def fields(self):
                 return self.numFields
 
-
-# New
-#anki.importing.Importers.append( [u"ZakTextFile (*.txt)", ZakImporter] )
-
-# Old
-anki.importing.Importers = [ e for e in anki.importing.Importers ]
-anki.importing.Importers.insert( 0, [u"ZakTextFile (*.txt)", ZakImporter] )
-
-#for e in anki.importing.Importers:
-#        print e
-#key = ";;".join([x[0] for x in anki.importing.Importers])
-#print key
-
-QUICK_IMPORT_KEY=u"Z"
-
-from ankiqt import mw
-from ankiqt.ui import utils
-from ankiqt.ui.importing import ImportDialog
-import ankiqt
-
 class QMIImportDialog(ImportDialog):
         def getFile(self):
-                self.file = u"/Users/zak/stuff/medicine/SRS scratchpad.txt"
+                self.file = QMI_FILE
                 self.modelChooser.hide()
                 self.dialog.tagDuplicates.hide()
                 self.dialog.autoDetect.setShown(False)
                 self.importer = anki.importing.Importers[0]
-                self.importerFunc = ZakImporter
+                self.importerFunc = QuickMultiImporter
                 
 def newKeyPressEvent(evt):
         if ((mw.state == "studyScreen")
-            and (unicode(evt.text()) == QUICK_IMPORT_KEY)):
+            and (unicode(evt.text()) == IMPORT_KEY)):
                 old = ankiqt.ui.importing.ImportDialog
                 ankiqt.ui.importing.ImportDialog = QMIImportDialog 
                 mw.onImport()
@@ -292,15 +277,16 @@ def newKeyPressEvent(evt):
         return oldEventHandler(evt)
 
 
+# Would be much better if we could use a hook to modify this, and slightly
+# better if it was at least a list rather than a tuple:
+#anki.importing.Importers.append( [u"QMI text (*.txt)", QuickMultiImporter] )
+
+anki.importing.Importers = [ e for e in anki.importing.Importers ]
+anki.importing.Importers.insert( 0, [u"QMI text (*.txt)", QuickMultiImporter] )
+
 oldEventHandler = mw.keyPressEvent
 mw.keyPressEvent = newKeyPressEvent
 
-#ankiqt.ui.importing.ImportDialog = QMIImportDialog 
-
-#        def __init__(self, parent, file):
-#                ImportDialog.__init__(self, parent)
-#                self.file = file
-
-mw.registerPlugin("QuickMultiImport", 0)
+mw.registerPlugin("QuickMultiImporter", 0)
 
 # vim: softtabstop=8 shiftwidth=8 expandtab
