@@ -1,0 +1,8 @@
+A plugin to embed Python code in cards/card templates.
+
+<span style="color:red; font-size:larger;">WARNING: By its very nature, this plugin is a GAPING SECURITY HOLE - if you have it enabled and review a maliciously-crafted (or even just buggy) deck, BAD PEOPLE WILL BE ABLE TO BREAK/TAKE OVER YOUR COMPUTER.  Do not install this plugin unless you're certain you fully understand these implications.</span>
+
+Loads substition "libraries" of functions and variables from <span style="font-family:Courier,monospace">%pluginsFolder%/CodeInCards/*.py</span>
+then provides syntax to let you substitute library calls and/or any other Python code into cards.
+
+More info at <a href="http://bit.ly/codeincardsdoc">http://bit.ly/codeincardsdoc</a>.
