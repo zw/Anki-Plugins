@@ -1,84 +1,18 @@
 '''
 CodeInCards - an Anki plugin to embed Python code in cards/card templates
 
-Copyright 2010 Isaac Wilcox
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License version 3 as
-published by the Free Software Foundation.
+Copyright 2010 Isaac Wilcox.  This program is free software: you can
+redistribute it and/or modify it under the terms of the GNU General Public
+License version 3 as published by the Free Software Foundation.
  
 Loads substition "libraries" from %pluginsFolder%/CodeInCards/*.py
 then provides syntax to let you substitute library calls into cards.
 
-Escapes may be included either encoded as HTML or among the markup
-(i.e. you can enter them directly in the browser-editor field, or the
-"HTML editor".  Four escape formats are supported; the first pair
-values brevity over flexibility:
+Documentation can be found at:
+  http://bit.ly/codeincardsdoc
 
-  $varName
-    Interpolate variable "varName".  Subscripting and dot-whatever
-    isn't supported (yet!) but you can use another format.
-
-  $functionName(arg, arg, ...)
-    Call "fuctionName" with supplied args, and interpolate the returned
-    string, e.g.:
-      $myFunc(myVar, "another arg")
-    Closing brackets aren't allowed anywhere in the args, so you can't say:
-      $functionName("a (broken) example")
-    You must also be careful with quotes around arguments.  Single
-    quotes tend to work better than doubles.
-
-The second pair is more flexible but more verbose:
-
-  {%= <expression> %}
-    Evaluates <expression> (a single expression) and substitutes
-    result, e.g.:
-      {%= 6 * 9 %}
-    will yield "42" in the card or template (well, OK, "54").  Function
-    calls also work, e.g.:
-      {%= functionName("a (working) example", someOtherFunc()) %}
-
-  {% <code> %}
-    Executes <code>; anything printed to stdout gets substituted, e.g.:
-      {%
-      if random.randint(0, 1000000) == 42:
-        print "The Ultimate Answer!"
-      %}
-
-Apart from globals in your libraries you can also use the following
-symbols:
-   QorA - 'q' or 'a', depending what card side is being rendered
-   card - the card being rendered; see the Anki source
-
-Compile errors get interpolated as HTML-ized strings.
-
-The string '<br />' is removed from within code if present before
-executione.  This allows you to add code in the card editor as well as
-card templates but means you can't include a BR in an escape.  If
-that matters to you, define a variable in your library called "BR" and
-use than in place of "<br/>".  No other HTML is removed, so be careful
-not to style any part of an escape entered in an card editor field.
-
-Get a small example library here: http://bit.ly/bit.ly/codeincards
-save it in %pluginsFolder%/CodeInCards/ and read it to see some
-trivial examples.
- 
-Caveats:
-  - This module is a gaping security hole if you ever import cards from
-    untrusted sources.
-  - At the moment there's no way to prevent the escapes appearing in the
-    browser, so cards start to look quite ugly.
-  - It's too easy to get carried away and implement your own SRS
-    mini-language packed with syntactic sugar.
-
-TODO: add individual fact fields alongside QorA and card in a dict
-  (need to marry up card.fact.values with card.model.names)
-TODO: implement m4's 'dnl' feature - perhaps by terminating a
-  multiline with "%}." instead of "%}"
-TODO: reload libraries without restarting Anki
-TODO: support $foo['index'] and maybe $foo.bar and $foo.bar()
-TODO: remove escapes from browser; there's no hook, but a sick hack
-  might be to wrap stripHTML()
+An example library can be found at:
+  http://bit.ly/codeincards
 '''
 
 import re
@@ -90,7 +24,7 @@ import anki
 
 # For debugging.
 #import logging
-#LOG_FILENAME = '/tmp/logging_example.out'
+#LOG_FILENAME = '/tmp/codeincards.out'
 #logging.basicConfig(filename=LOG_FILENAME,level=logging.DEBUG)
 
 modules = []
