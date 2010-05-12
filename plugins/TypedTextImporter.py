@@ -1,5 +1,5 @@
 '''
-QuickMultiImporter - imports facts typed into text files in a certain format
+TypedTextImporter - imports facts typed into text files in a certain format
 
 Copyright 2010 Isaac Wilcox
 
@@ -7,18 +7,18 @@ This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License version 3 as
 published by the Free Software Foundation.
 
-For documentation of the file format see the file QuickMultiImporter.html
-either in this directory or online at ...
+For documentation see:
+   http://bit.ly/TypedTextImporterDoc
 '''
 
 import sys
 import re
 from types import *
-#import logging
-#LOG_FILENAME = '/tmp/logging_example.out'
-#logging.basicConfig(filename=LOG_FILENAME,level=logging.DEBUG)
+import logging
+LOG_FILENAME = '/tmp/TypedTextImporter.out'
+logging.basicConfig(filename=LOG_FILENAME,level=logging.CRITICAL)
 
-QMI_FILE = u"/Users/zak/stuff/medicine/SRS scratchpad.txt"
+TTI_FILE = u"/Users/zak/stuff/medicine/SRS scratchpad.txt"
 IMPORT_KEY=u"Z"
 YAML_PATH = "/opt/local/Library/Frameworks/Python.framework/Versions/2.6/lib/python2.6/site-packages/"
 
@@ -35,7 +35,7 @@ from ankiqt.ui import utils
 from ankiqt.ui.importing import ImportDialog
 import ankiqt
 
-class QuickMultiImporter(anki.importing.Importer):
+class TypedTextImporter(anki.importing.Importer):
         needMapper = False
         def __init__(self, deck, file):
                 anki.importing.Importer.__init__(self, deck, file)
@@ -268,20 +268,20 @@ class QuickMultiImporter(anki.importing.Importer):
         def fields(self):
                 return self.numFields
 
-class QMIImportDialog(ImportDialog):
+class TTIImportDialog(ImportDialog):
         def getFile(self):
-                self.file = QMI_FILE
+                self.file = TTI_FILE
                 self.modelChooser.hide()
                 self.dialog.tagDuplicates.hide()
                 self.dialog.autoDetect.setShown(False)
                 self.importer = anki.importing.Importers[0]
-                self.importerFunc = QuickMultiImporter
+                self.importerFunc = TypedTextImporter
                 
 def newKeyPressEvent(evt):
         if ((mw.state == "studyScreen")
             and (unicode(evt.text()) == IMPORT_KEY)):
                 old = ankiqt.ui.importing.ImportDialog
-                ankiqt.ui.importing.ImportDialog = QMIImportDialog 
+                ankiqt.ui.importing.ImportDialog = TTIImportDialog 
                 mw.onImport()
                 ankiqt.ui.importing.ImportDialog = old 
                 evt.accept()
@@ -290,14 +290,14 @@ def newKeyPressEvent(evt):
 
 # Would be much better if we could use a hook to modify this, and slightly
 # better if it was at least a list rather than a tuple:
-#anki.importing.Importers.append( [u"QMI text (*.txt)", QuickMultiImporter] )
+#anki.importing.Importers.append( [u"TypedTextImporter (*.txt)", TypedTextImporter] )
 
 anki.importing.Importers = [ e for e in anki.importing.Importers ]
-anki.importing.Importers.insert( 0, [u"QMI text (*.txt)", QuickMultiImporter] )
+anki.importing.Importers.insert( 0, [u"TypedTextImporter (*.txt)", TypedTextImporter] )
 
 oldEventHandler = mw.keyPressEvent
 mw.keyPressEvent = newKeyPressEvent
 
-mw.registerPlugin("QuickMultiImporter", 0)
+mw.registerPlugin("TypedTextImporter", 0)
 
 # vim: softtabstop=8 shiftwidth=8 expandtab
