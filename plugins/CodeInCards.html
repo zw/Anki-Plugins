@@ -1,7 +1,7 @@
 <html>
 <head><title>CodeInCards - Anki plugin</title></head>
 <body>
-<h3>CodeInCards - a plugin to embed Python code in cards/card templates</h3>
+<h3>CodeInCards - an Anki plugin to embed Python code in cards/card templates</h3>
 
 <p>
 Copyright 2010 Isaac Wilcox.  This program is free software: you can
@@ -9,16 +9,20 @@ redistribute it and/or modify it under the terms of the GNU General Public
 License version 3 as published by the Free Software Foundation.
 </p>
 
+<p style="color:red; font-size:larger">WARNING: This plugin is a GAPING SECURITY HOLE if you ever import cards from untrusted sources.</p>
+
 <p> 
-Loads substition "libraries" of functions and variables from <span style="font-family:Courier,monospace">%pluginsFolder%/CodeInCards/*.py</span>
-then provides syntax to let you substitute library calls into cards.
+This plugin loads substition "libraries" of functions and variables from
+<span style="font-family:Courier,monospace">%pluginsFolder%/CodeInCards/*.py</span>
+then provides syntax to let you substitute the results library calls (or indeed
+any other arbitrary Python code) into cards.
 </p>
 
 <p>
-Escapes may be included either encoded as HTML or among the markup
-(i.e. you can enter them directly in the browser-editor field, or the
-"HTML editor".  Four escape formats are supported; the first pair
-values brevity over flexibility:
+Escapes may be included either encoded as HTML or among the markup (i.e. you
+can enter them directly in the browser-editor field, or in the "HTML editor" window).
+The following escape formats are supported.  The dollar-formats aim for brevity
+over flexibility:
 </p>
 
 <p>
@@ -43,18 +47,38 @@ values brevity over flexibility:
       $myFunc(myVar, "another arg")
   </div>
   <div style="margin-left:6em">
-    Closing brackets aren't allowed anywhere in args, so you can't say:
+    A note on brackets.  Substitutions of fields are fine because Anki substitutes <span style="font-family:Courier,monospace">%(fieldName)s</span> at addition/edit time (way before code escapes get interpreted):
   </div>
     <div style="margin-left:9em; margin-top:1em; margin-bottom:1em; font-family:Courier,monospace">
-      $functionName("a (broken) example")
+      $willWork('question field is %(question)s')
     </div>
   <div style="margin-left:6em">
-    You must also be careful with quotes around arguments.  Single quotes work better than doubles.
+    There's a catch: when you say:
+  </div>
+    <div style="margin-left:9em; margin-top:1em; margin-bottom:1em; font-family:Courier,monospace">
+      %(fieldName)s
+    </div>
+  <div style="margin-left:6em">
+    ...Anki actually substitutes something like this in order to implement your field formatting settings:
+  </div>
+    <div style="margin-left:9em; margin-top:1em; margin-bottom:1em; font-family:Courier,monospace">
+      &lt;span id="fm109283749"&gt;fieldContents&lt;span&gt;
+    </div>
+  <div style="margin-left:6em">
+    ...so you must single-quote these substitutions to avoid unescaped quotes.
+    No other closing brackets are allowed in the args (that's the price you pay for a compact escape format), so you can't say either of these in dollar-format:
+  </div>
+    <div style="margin-left:9em; margin-top:1em; margin-bottom:1em; font-family:Courier,monospace">
+      $wontWork("a (broken) example")<br/>
+      $alsoWontWork("some text", anotherFunc())
+    </div>
+  <div style="margin-left:6em">
+    However, read on for another way to do this.
   </div>
 </p>
 
 <p>
-The second pair is more flexible but more verbose:
+The bracketed formats are more flexible but more verbose:
 </p>
 
 <p>
@@ -69,7 +93,7 @@ The second pair is more flexible but more verbose:
       {%= 6 * 9 %}
   </div>
   <div style="margin-left:6em">
-    will yield "42" in the card or template (well, OK, "54").  Function
+    will yield "54" in the card or template (or "42" if you're a Hitchiker's Guide fan).  Function
     calls also work (brackets and all), e.g.:
   </div>
   <div style="margin-left:9em; margin-top:1em; margin-bottom:1em; font-family:Courier,monospace">
@@ -98,13 +122,13 @@ symbols:
 </p>
 <dl style="margin-left:3em;">
   <dt style="font-weight:bold; font-family:Courier,monospace">QorA</dt>
-  <dd>'q' or 'a', depending what card side is being rendered</dd>
+  <dd>'q' or 'a', depending on which side of the card is being rendered</dd>
   <dt style="font-weight:bold; font-family:Courier,monospace">card</dt>
   <dd>the card being rendered; see the Anki source</dd>
 </dl>
 
 <p>
-Compile errors get interpolated as HTML-ized strings.
+Compile error handling depends on where the erroneous code is.  If your substitution library has errors this'll be flagged up with the normal plugin error dialog when Anki loads CodeInCards.  If an escape contains code with errors then the error will get interpolated as a big red HTML-ised string every time you (p)review the card.
 <p>
 
 <p>
@@ -112,8 +136,8 @@ The string "&lt;br /&gt;" is removed from within code if present before
 execution.  This allows you to add code in the card editor as well as
 card templates but means you can't include a BR in an escape.  If
 that matters to you, define a variable in your library called "BR" and
-use than in place of "&lt;br/&gt;  No other HTML is removed, so be careful
-not to style any part of an escape entered in an card editor field.
+use than in place of "&lt;br/&gt;".  No other HTML is removed, so be careful
+not to style any part of an escape entered in a card editor field.
 </p>
 
 <p>
@@ -126,7 +150,7 @@ trivial examples.
 Caveats:
 </p>
 <ul>
-  <li>This module is a gaping security hole if you ever import cards from untrusted sources.</li>
+  <li>This plugin is a gaping security hole if you ever import cards from untrusted sources.</li>
   <li>At the moment there's no way to prevent the escapes appearing in the browser, so cards start to look quite ugly.</li>
   <li>It's too easy to get carried away and implement your own SRS mini-language packed with syntactic sugar.</li>
 </ul>
@@ -135,6 +159,7 @@ Caveats:
 TODO:
 </p>
 <ul>
+  <li>make it more secure; Damien's idea of a local list of trusted decks seems the safest fix</li>
   <li>add individual fact fields alongside <span style="font-family:Courier,monospace;">QorA</span> and <span style="font-family:Courier,monospace">card</span> in a dict (need to marry up <span style="font-family:Courier,monospace">card.fact.values</span> with <span style="font-family:Courier,monospace">card.model.names</span>)</li>
   <li>implement m4's '<span style="font-family:Courier,monospace">dnl</span>' feature - perhaps by terminating a multiline with "<span style="font-family:Courier,monospace">%}.</span>" instead of "<span style="font-family:Courier,monospace">%}</span>"</li>
   <li>reload libraries without restarting Anki</li>
