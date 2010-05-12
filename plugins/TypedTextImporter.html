@@ -1,0 +1,166 @@
+<html>
+<head>
+  <link rel="stylesheet" type="text/css" href="anki.css" />
+  <meta charset="utf-8">
+  <script type="text/javascript">
+function getElementsByClass(searchClass,node,tag) {
+        var classElements = new Array();
+        if ( node == null )
+                node = document;
+        if ( tag == null )
+                tag = '*';
+        var els = node.getElementsByTagName(tag);
+        var elsLen = els.length;
+        var pattern = new RegExp("(^|\\s)"+searchClass+"(\\s|$)");
+        for (i = 0, j = 0; i < elsLen; i++) {
+                if ( pattern.test(els[i].className) ) {
+                        classElements[j] = els[i];
+                        j++;
+                }
+        }
+        return classElements;
+}
+function hideImpComm() {
+        var l = getElementsByClass("impcomm",null,"span");
+        for (i = 0; i < l.length; i++) {
+                if (l[i].style.visibility == 'hidden') {
+                        l[i].style.visibility = 'visible';
+                        l[i].style.display = 'inline';
+                } else {
+                        l[i].style.visibility = 'hidden';
+                        l[i].style.display = 'none';
+                }
+        }
+}
+  </script>
+  <title>TypedTextImporter - Anki plugin</title>
+</head>
+<body>
+<h3>TypedTextImporter - type facts into a formatted text file and bulk-import them quickly</h3>
+
+<p>
+Copyright 2010 Isaac Wilcox.  This program is free software: you can
+redistribute it and/or modify it under the terms of the GNU General Public
+License version 3 as published by the Free Software Foundation.
+</p>
+
+<p> 
+I prefer to type my items into a text editor so that I can see them all in one
+or two screenfuls before I import them - that way I find my items don't overlap
+or conflict with each other as much.  I don't find the existing supported
+formats usable for this, and the world doesn't have nearly enough file formats,
+so I rolled yet another one to meet my needs.
+</p>
+
+<p>
+A commented example is probably the best documentation.  Click this <button type="button" onclick="hideImpComm()">button</button> to toggle the purely explanatory comments.
+</p>
+<div class="code"><span class="impcomm"># Comments are allowed anywhere and start with '#'.<br/>
+# Trailing whitespace is discarded from all lines.<br/>
+# Empty lines are skipped unless we're in the middle of a fact.<br/>
+# "st: " introduces space-separated tags that apply to all facts in the file<br/>
+# You could add them at import, but I prefer to do it here.<br/><br/></span>st: ttd.2010-04-26T1000 ttx.cvs.L2
+
+###############################
+<span class="impcomm"># "m: " names a model to be used for the facts that follow.<br/>
+# The name must match Settings->Deck Properties->Models & Priorities->General & Fields->General->Name<br/></span>m: Acronyms etc
+<span class="impcomm"># I find it useful to list the fields in the model.<br/></span># contraction, expansion, context, mnemonic, source
+
+<span class="impcomm"># Once a model is set, a non-blank line begins a fact.<br/></span>PDGF <span class="impcomm"># this will be assigned to the first field of the model</span>
+platelet-derived growth factor <span class="impcomm"># and this to the second, etc</span>
+atheroma pathogenesis
+. <span class="impcomm"># a dot marks the end of the fact</span>
+
+<span class="impcomm"># You don't necessarily have to give values for all fields.<br/>
+# Anki might complain though if you miss one marked "prevent empty entries".<br/>
+# This fact omits "context", for instance - an option field in this model.<br/></span>CETP
+cholesterol ester transfer protein
+.
+
+###############################
+<span class="impcomm"># Switch to a new model.<br/>
+# The importer will add all facts for the previous model at this point (I hope to fix this one day).<br/>
+# The implication is that a parse error will cause a partial import.<br/></span>m: 1One-term definition
+# term, definition, context, mnemonic, source
+
+<span class="impcomm"># This fact has no context or mnemonic, but it does have a source, so we need to have the empty lines.<br/>
+# I'd normally use a comment to explicitly say they're empty, but that'd complicate this example.<br/></span>xanthoma
+a deposition of yellowish cholesterol-rich material in tendons and other body parts
+
+
+http://www.nlm.nih.gov/medlineplus/ency/article/001447.htm
+.
+
+<span class="impcomm"># Fields are technically raw HTML, so as a contrived example you could say
+# "macrophage" as "mɸ" with an entity reference.  Let's also colour something blue.<br/></span>foam cell
+a macrophage (m&amp;phi;) or &lt;span style="color:blue;"&gt;smooth muscle cell&lt;/span&gt; which has phagocytosed LDL and forms part of an atheroma
+.
+
+###############################
+m: Palindromic
+# east, west, context, mnemonic, source
+
+<span class="impcomm"># You can add a tag to just one fact by putting "t: tag1 tag2 ..." anywhere inside:</span>
+Which serum cholesterol type is the best predictor of coronary disease?
+What is LDL a good predictor for?
+t: clinicaltests <span class="impcomm"># like this</span>
+.
+
+###############################
+m: One way
+# question, answer, context, mnemonic, source
+
+<span class="impcomm"># You can also include lists in YAML format.<br/>
+# They'll get converted to HTML in the card.<br/>
+# A list element of "- t: some text" will break the list, include "some text" and restart it.<br/>
+# A list element of "- I forgot this was YAML:" will do the same with "I forgot..."<br/></span>List the conditions in "Virchow's triad" of thrombosis risk.
+---
+- vessel wall changes (esp. atheroma)
+- flow changes (esp. turbulent)
+- blood composition changes (esp. platelets, fibrinogen)
+...
+.
+
+<span class="impcomm"># You can include multiple lines using Perlish "here document" format:<span style="white-space:pre;">
+#   &lt;&lt;end
+#   first line
+#   second line
+#   all into one field
+#   end
+#   next field
+# or with backticks:
+#   `first line
+#   second line
+#   all into one field`
+#   next field
+</span><br/>
+# The Perl-eqsue token __END__ ceases the import, so you can leave crap at the end.<br/></span>
+__END__
+
+# Not sure about this one.  See http://content.onlinejacc.org/content/vol43/issue5/images/large/3016504.717.gr1.jpeg
+What role does LCAT play in lipid metabolism?
+It converts HDL free cholesterol into HDL cholesterol esters during reverse cholesterol transport.
+.
+
+</div>
+
+<p>
+To speed things up slightly if you use the same file over and over again (like
+I do) you can use a hotkey.  By default it's "Shift-z" i.e. "Z" (for 'Zak', because I'm
+egotistical, and because Q seemed unsuitable) but you can edit the Python
+source to change this.  If you hit that key the importer loads from a hard-coded
+path-to-file - again, you need to edit the Python to change it.  It still opens
+up an import dialog with a button.
+</p>
+
+<p>
+TODO:
+</p>
+<ul>
+  <li>make hot-key importing use a path configured with a dialog reached by a menu</li>
+  <li>don't insert our importer first</li>
+  <li>I'm sure this plugin violates what plugin API there is</li>
+  <li>partial imports are ugly; problem is we're based on a text importer not designed for >1 model, yet I'm not comfortable creating facts directly in the DB like Anki's own importer does</li>
+  <li>code is really ugly - huge functions and peppered with logging debug from development</li>
+</ul>
+</body>
