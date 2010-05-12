@@ -17,14 +17,10 @@ values brevity over flexibility:
     Call "fuctionName" with supplied args, and interpolate the returned
     string, e.g.:
       $myFunc(myVar, "another arg")
-    Some things won't work:
-      * brackets aren't allowed anywhere in args, so you can't say:
-          $functionName("a (broken) example")
-      * it's very greedy with the args, so this needs to be split
-        across lines: $firstCall("foo") some plain text
-          $secondCall("bar")
+    Closing brackets aren't allowed anywhere in the args, so you can't say:
+      $functionName("a (broken) example")
     You must also be careful with quotes around arguments.  Single
-    quotes work best.
+    quotes tend to work better than doubles.
 
 The second pair is more flexible but more verbose:
 
