@@ -1,4 +1,15 @@
-# Adds an importer for the rough text files I create cards from.
+'''
+QuickMultiImporter - imports facts typed into text files in a certain format
+
+Copyright 2010 Isaac Wilcox
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License version 3 as
+published by the Free Software Foundation.
+
+For documentation of the file format see the file QuickMultiImporter.html
+either in this directory or online at ...
+'''
 
 import sys
 import re
