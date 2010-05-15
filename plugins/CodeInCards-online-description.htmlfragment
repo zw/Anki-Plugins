@@ -6,3 +6,5 @@ Loads substition "libraries" of functions and variables from <span style="font-f
 then provides syntax to let you substitute library calls and/or any other Python code into cards.
 
 More info at <a href="http://bit.ly/codeincardsdoc">http://bit.ly/codeincardsdoc</a>.
+
+<!-- $Id$ -->
