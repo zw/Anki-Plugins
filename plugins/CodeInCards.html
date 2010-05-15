@@ -47,33 +47,38 @@ over flexibility:
       $myFunc(myVar, "another arg")
   </div>
   <div style="margin-left:6em">
-    A note on brackets.  Substitutions of fields are fine because Anki substitutes <span style="font-family:Courier,monospace">%(fieldName)s</span> at addition/edit time (way before code escapes get interpreted):
+    When you save this in the card template editor:
   </div>
     <div style="margin-left:9em; margin-top:1em; margin-bottom:1em; font-family:Courier,monospace">
-      $willWork('question field is %(question)s')
+      $myFunc('foo %(fieldName)s bar')
     </div>
-  <div style="margin-left:6em">
-    There's a catch: when you say:
+  <div style="margin-left:6em; width:35em; ">
+    ...Anki regenerates the HTML for all the cards, which expands
+    <span style="font-family:Courier,monospace">%(fieldName)s</span>
+    and wraps it in some formatting code.  By the time the card gets rendered
+    for (p)review and CodeInCards escapes get interpreted, CodeInCards will see
+    something like this:
   </div>
     <div style="margin-left:9em; margin-top:1em; margin-bottom:1em; font-family:Courier,monospace">
-      %(fieldName)s
+      $myFunc('foo &lt;span id="fm109283749"&gt;fieldContents&lt;span&gt; bar')
     </div>
-  <div style="margin-left:6em">
-    ...Anki actually substitutes something like this in order to implement your field formatting settings:
-  </div>
-    <div style="margin-left:9em; margin-top:1em; margin-bottom:1em; font-family:Courier,monospace">
-      &lt;span id="fm109283749"&gt;fieldContents&lt;span&gt;
-    </div>
-  <div style="margin-left:6em">
-    ...so you must single-quote these substitutions to avoid unescaped quotes.
-    No other closing brackets are allowed in the args (that's the price you pay for a compact escape format), so you can't say either of these in dollar-format:
-  </div>
+  <p style="margin-left:6em; width:35em;">
+    This works fine but you must avoid double-quotes for the argument to
+    <span style="font-family:Courier,monospace">myFunc()</span> to prevent a
+    clash with Anki's <span style="font-family:Courier,monospace">&lt;span&gt;</span>
+    tag attribute.
+  </p>
+  <p style="margin-left:6em; width:35em;">
+    Apart from this special case, closing brackets are not allowed in the args
+    (that's the price you pay for a compact escape format), so you can't say
+    either of these in dollar-format:
+  </p>
     <div style="margin-left:9em; margin-top:1em; margin-bottom:1em; font-family:Courier,monospace">
       $wontWork("a (broken) example")<br/>
       $alsoWontWork("some text", anotherFunc())
     </div>
   <div style="margin-left:6em">
-    However, read on for another way to do this.
+    Instead, use the bracketed forms below to achieve this.
   </div>
 </p>
 
@@ -117,18 +122,41 @@ The bracketed formats are more flexible but more verbose:
 </p>
 
 <p>
-Apart from globals in your libraries you can also use the following
-symbols:
+Code in libraries is executed when Anki loads the CodeInCards plugin.  Code in
+escapes is executed at the point that the card gets displayed.
+</p>
+
+<p>
+The CodeInCards module provides the following symbols for use by libraries:
 </p>
 <dl style="margin-left:3em;">
   <dt style="font-weight:bold; font-family:Courier,monospace">QorA</dt>
   <dd>'q' or 'a', depending on which side of the card is being rendered</dd>
   <dt style="font-weight:bold; font-family:Courier,monospace">card</dt>
-  <dd>the card being rendered; see the Anki source</dd>
+  <dd>the card being rendered; see the Anki source for structure details</dd>
+  <dt style="font-weight:bold; font-family:Courier,monospace">showHTML</dt>
+  <dd>if <span style="font-weight:bold; font-family:Courier,monospace">True</span>, escape the HTML before rendering; this can aid in debugging an escape</dd>
 </dl>
 
 <p>
-Compile error handling depends on where the erroneous code is.  If your substitution library has errors this'll be flagged up with the normal plugin error dialog when Anki loads CodeInCards.  If an escape contains code with errors then the error will get interpolated as a big red HTML-ised string every time you (p)review the card.
+Escapes have access to all globals in your libraries, plus the following
+symbols provided for convenience/brevity:
+</p>
+<dl style="margin-left:3em;">
+  <dt style="font-weight:bold; font-family:Courier,monospace">CIC</dt>
+  <dd>can be used as if you had said <span style="font-weight:bold; font-family:Courier,monospace">import CodeInCards as CIC</span> at the start of your escape</dd>
+  <dt style="font-weight:bold; font-family:Courier,monospace">QorA</dt>
+  <dd>same as saying <span style="font-weight:bold; font-family:Courier,monospace">CIC.QorA</span></dd>
+  <dt style="font-weight:bold; font-family:Courier,monospace">card</dt>
+  <dd>same as saying <span style="font-weight:bold; font-family:Courier,monospace">CIC.card</span></dd>
+</dl>
+
+<p>
+Compile error handling depends on where the erroneous code is.  If your
+substitution library has errors this'll be flagged up with the normal plugin
+error dialog when Anki loads CodeInCards.  If an escape contains code with
+errors then the error will get interpolated as a big red HTML-ised string every
+time you (p)review the card.
 <p>
 
 <p>
@@ -159,11 +187,12 @@ Caveats:
 TODO:
 </p>
 <ul>
-  <li>make it more secure; Damien's idea of a local list of trusted decks seems the safest fix</li>
   <li>add individual fact fields alongside <span style="font-family:Courier,monospace;">QorA</span> and <span style="font-family:Courier,monospace">card</span> in a dict (need to marry up <span style="font-family:Courier,monospace">card.fact.values</span> with <span style="font-family:Courier,monospace">card.model.names</span>)</li>
   <li>implement m4's '<span style="font-family:Courier,monospace">dnl</span>' feature - perhaps by terminating a multiline with "<span style="font-family:Courier,monospace">%}.</span>" instead of "<span style="font-family:Courier,monospace">%}</span>"</li>
-  <li>reload libraries without restarting Anki</li>
+  <li>reload libraries without restarting Anki; you might be able to hack this by using <span style="font-family:Courier,monospace">reload(yourModule)</span> in escapes</li>
   <li>support <span style="font-family:Courier,monospace">$foo['index']</span> and maybe <span style="font-family:Courier,monospace">$foo.bar</span> and <span style="font-family:Courier,monospace">$foo.bar()</span></li>
-  <li>remove escapes from browser; there's no hook, but a sick hack might be to wrap <span style="font-family:Courier,monospace">stripHTML()</li>
+  <li>remove escapes from browser; there's no hook, but a sick hack might be to wrap <span style="font-family:Courier,monospace">stripHTML()</span></li>
 </ul>
+<p><i>$Id$</i></p>
 </body>
+</html>
