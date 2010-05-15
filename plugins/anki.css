@@ -21,4 +21,21 @@ div.code {
   display:block;
 }
 
+
+body {
+  font-size:100%;
+}
+
+h1 {
+  font-size:1.75em;
+}
+
+h2 {
+  font-size:1.5em;
+}
+
+p {
+  max-width:40em;
+}
+
 /* $Id$ */
