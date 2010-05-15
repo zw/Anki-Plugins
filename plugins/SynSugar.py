@@ -1,4 +1,5 @@
-# Some quick and dirty hacks for formatQA that do one-off substitutions.
+# Some quick and dirty hacks for formatQA that do substitutions which should
+# really be done permanently to the source.
 #
 # => becomes &rArr;
 # &amp;rArr; becomes the actual unicode character
