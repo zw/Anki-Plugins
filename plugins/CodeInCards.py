@@ -30,6 +30,7 @@ import re
 import sys
 import os
 import traceback
+import textwrap
 
 import anki
 import ankiqt
@@ -159,12 +160,13 @@ def prettyError(code, trace):
         prettyTrace = re.sub(">", "&gt;", prettyTrace)
         prettyTrace = re.sub("\n", "<br />", prettyTrace)
         
-        return """\
+        ret = """\
                <div style='color:red; font-family:monospace; white-space:pre'>
                Error evaluating code substitution:<br />%s
                libs symtab is:<br />%s<br />
                '''code''' is:<br />'''%s'''
                </div>"""  % (prettyTrace, shortPrettySymtab, code)
+        return textwrap.dedent(ret)
         
 def getLibraryDir():
         # For testing:
