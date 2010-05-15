@@ -21,6 +21,14 @@ Functions:
     Splits text on "," to make a list and returns a random element.
     e.g. pick("any,of,these,terms,perhaps this one with spaces")
 
+For really simple demonstration that it's working:
+
+  sayHello()
+    Returns a hello message.
+
+  hello
+    A hello message.
+
 $Id$
 '''
 import random
@@ -30,11 +38,12 @@ import CodeInCards as CIC
 # %configDir%/style.css but that firstly doesn't work and secondly messes up
 # the whole UI. 
 ANSWER_FORMAT = """<span style='color:blue; font-weight:bold;'>%s</span>"""
+HELLO = "Hello!"
 
 def a(text):
         if CIC.QorA == "a":
                 return ANSWER_FORMAT % text
-        return text 
+        return text
 
 def ifnem(text, fmt):
         if text != "":
@@ -53,5 +62,8 @@ def ifq(text):
 
 def pick(text):
         return random.choice(text.split(","))
+
+def sayHello():
+        return HELLO
 
 # vim: softtabstop=8 shiftwidth=8 expandtab
