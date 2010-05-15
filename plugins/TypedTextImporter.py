@@ -9,6 +9,8 @@ published by the Free Software Foundation.
 
 For documentation see:
    http://bit.ly/TypedTextImporterDoc
+
+$Id$
 '''
 
 import sys
