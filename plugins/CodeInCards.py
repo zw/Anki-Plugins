@@ -18,12 +18,14 @@ $Id$
 '''
 
 securityWarning = """\
-Executing code is a potential security risk.  If an attacker creates \
-or is able to modify the deck or if anyone (including you) puts buggy \
-code in the deck, it could lead to your computer being damaged and/or \
-taken over by viruses and trojans.  You are strongly advised to enable \
-CodeInCards only on decks you built yourself from scratch and which are \
-not shared or synchronised online.  You have been warned!\
+A trusted deck is inherently a potential security hole.  If someone/something \
+deliberately or accidentally causes you to run CodeInCard escapes you didn't \
+write, or even if you just write buggy escapes, it could lead to you losing \
+data and/or control of your computer (e.g. getting infected with viruses and \
+trojans).
+
+You are strongly advised to trust only decks which you've built yourself, from \
+scratch, and which are not shared or synchronised online. You have been warned!\
 """
 
 import re
