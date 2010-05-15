@@ -1,23 +1,37 @@
 <html>
-<head><title>CodeInCards - Anki plugin</title></head>
+<head>
+  <title>CodeInCards - Anki plugin</title>
+  <link rel="stylesheet" type="text/css" href="anki.css" />
+  <meta charset="utf-8">
+</head>
 <body>
-<h3>CodeInCards - an Anki plugin to embed Python code in cards/card templates</h3>
+<h1>CodeInCards - an Anki plugin to embed Python code in cards/card templates</h1>
+
+<h2>Description</h2>
 
 <p>
-Copyright 2010 Isaac Wilcox.  This program is free software: you can
-redistribute it and/or modify it under the terms of the GNU General Public
-License version 3 as published by the Free Software Foundation.
-</p>
-
-<p style="color:red; font-size:larger">WARNING: This plugin is a GAPING SECURITY HOLE if you ever import cards from untrusted sources.</p>
-
-<p> 
-This plugin loads substition "libraries" of functions and variables from
+This <a href="http://ichi2.net/anki/">Anki</a> plugin loads substition
+"libraries" of <a href="http://www.python.org/">Python</a> functions and variables from
 <span style="font-family:Courier,monospace">%pluginsFolder%/CodeInCards/*.py</span>
-then provides syntax to let you substitute the results library calls (or indeed
-any other arbitrary Python code) into cards.
+then provides syntax to let you substitute the results of library calls (or indeed
+any other arbitrary Python code) into cards and/or card templates.
 </p>
 
+<p style="color:red; font-size:larger">WARNING: This plugin is a potential
+security hole.  Read <a href="#security">"Security"</a> below before
+considering installing it.</p>
+
+<h2>Installation</h2>
+
+<p>
+Download using <a href="http://ichi2.net/anki/wiki/Plugins">Anki's plugin
+browser</a> in the normal way; search for "codeincards".  You may also want the <a
+href="default.py">example library</a> which you should save in the <span
+style="font-family:Courier,monospace">%pluginsFolder%/CodeInCards/</span>
+directory.
+</p>
+
+<h2>Syntax</h2>
 <p>
 Escapes may be included either encoded as HTML or among the markup (i.e. you
 can enter them directly in the browser-editor field, or in the "HTML editor" window).
@@ -29,7 +43,7 @@ over flexibility:
   <div style="color:blue; margin-left:3em; font-family:Courier,monospace">
   $varName
   </div>
-  <div style="margin-left:6em">
+  <div style="margin-left:6em; max-width:35em; ">
     Interpolate variable "varName".  Subscripting and dot-whatever
     isn't supported (yet!) but you can use another format.
   </div>
@@ -39,20 +53,20 @@ over flexibility:
   <div style="color:blue; margin-left:3em; font-family:Courier,monospace">
   $functionName(...)
   </div>
-  <div style="margin-left:6em">
+  <div style="margin-left:6em; max-width:35em; ">
     Invoke <span style="font-family:Courier,monospace">functionName</span> with the supplied args, and interpolate the returned
     string, e.g.:
   </div>
   <div style="margin-left:9em; margin-top:1em; margin-bottom:1em; font-family:Courier,monospace">
       $myFunc(myVar, "another arg")
   </div>
-  <div style="margin-left:6em">
+  <div style="margin-left:6em; max-width:35em; ">
     When you save this in the card template editor:
   </div>
     <div style="margin-left:9em; margin-top:1em; margin-bottom:1em; font-family:Courier,monospace">
       $myFunc('foo %(fieldName)s bar')
     </div>
-  <div style="margin-left:6em; width:35em; ">
+  <div style="margin-left:6em; max-width:35em; ">
     ...Anki regenerates the HTML for all the cards, which expands
     <span style="font-family:Courier,monospace">%(fieldName)s</span>
     and wraps it in some formatting code.  By the time the card gets rendered
@@ -62,13 +76,13 @@ over flexibility:
     <div style="margin-left:9em; margin-top:1em; margin-bottom:1em; font-family:Courier,monospace">
       $myFunc('foo &lt;span id="fm109283749"&gt;fieldContents&lt;span&gt; bar')
     </div>
-  <p style="margin-left:6em; width:35em;">
+  <p style="margin-left:6em; max-width:35em;">
     This works fine but you must avoid double-quotes for the argument to
     <span style="font-family:Courier,monospace">myFunc()</span> to prevent a
     clash with Anki's <span style="font-family:Courier,monospace">&lt;span&gt;</span>
     tag attribute.
   </p>
-  <p style="margin-left:6em; width:35em;">
+  <p style="margin-left:6em; max-width:35em;">
     Apart from this special case, closing brackets are not allowed in the args
     (that's the price you pay for a compact escape format), so you can't say
     either of these in dollar-format:
@@ -77,7 +91,7 @@ over flexibility:
       $wontWork("a (broken) example")<br/>
       $alsoWontWork("some text", anotherFunc())
     </div>
-  <div style="margin-left:6em">
+  <div style="margin-left:6em; max-width:35em; ">
     Instead, use the bracketed forms below to achieve this.
   </div>
 </p>
@@ -90,14 +104,14 @@ The bracketed formats are more flexible but more verbose:
   <div style="color:blue; margin-left:3em; font-family:Courier,monospace">
   {%= &lt;expression&gt; %}
   </div>
-  <div style="margin-left:6em">
+  <div style="margin-left:6em; max-width:35em; ">
     Evaluates &lt;expression&gt; (a single expression) and substitutes
     result.  For example:
   </div>
   <div style="margin-left:9em; margin-top:1em; margin-bottom:1em; font-family:Courier,monospace">
       {%= 6 * 9 %}
   </div>
-  <div style="margin-left:6em">
+  <div style="margin-left:6em; max-width:35em; ">
     will yield "54" in the card or template (or "42" if you're a Hitchiker's Guide fan).  Function
     calls also work (brackets and all), e.g.:
   </div>
@@ -169,24 +183,43 @@ not to style any part of an escape entered in a card editor field, and
 note that &lt; and &gt; will cause cryptic problems.
 </p>
 
+
+<h2 id="security">Security</h2>
 <p>
-You can find a small example library at <a href="http://bit.ly/codeincards">http://bit.ly/codeincards</a>.
-Save it in <span style="font-family:Courier,monospace">%pluginsFolder%/CodeInCards/</span> and read it to see some
-trivial examples.
+Like any feature that provides ways to execute code, this plugin is inherently
+a potential security hole.  If someone/something deliberately or accidentally
+causes you to run CodeInCard escapes you didn't write, or even if you just
+write buggy escapes, it could lead to you losing data and/or control of your
+computer (e.g. getting infected with viruses and trojans).
 </p>
- 
+
 <p>
-Caveats:
+To minimise this risk, CodeInCards will only execute escapes in decks it
+trusts.  Decks are untrusted by default and use of escapes in an untrusted deck
+will generate a warning message instead of running them.  To trust a deck use
+Tools&rarr;Advanced&rarr;CodeInCards Deck Trust... and read the warning.  Deck
+trust settings are per installation - a deck trusted by you and exported/shared
+will not be trusted by anyone else unless they go through this step too.  The
+deck's creation time and name are used together as an identifier, so if you use
+the OS to copy a deck you already trust and give it the same name then the copy
+will be trusted too (but again, only by your installation).
 </p>
+
+<p>
+You are strongly advised to trust only decks which you've built yourself,
+from scratch, and which are not shared or synchronised online.  You have been
+warned!
+</p>
+
+<h2>Caveats</h2>
+
 <ul>
-  <li>This plugin is a gaping security hole if you ever import cards from untrusted sources.</li>
   <li>At the moment there's no way to prevent the escapes appearing in the browser, so cards start to look quite ugly.</li>
   <li>It's too easy to get carried away and implement your own SRS mini-language packed with syntactic sugar.</li>
 </ul>
 
-<p>
-TODO:
-</p>
+<h2>To Do</h2>
+
 <ul>
   <li>add individual fact fields alongside <span style="font-family:Courier,monospace;">QorA</span> and <span style="font-family:Courier,monospace">card</span> in a dict (need to marry up <span style="font-family:Courier,monospace">card.fact.values</span> with <span style="font-family:Courier,monospace">card.model.names</span>)</li>
   <li>implement m4's '<span style="font-family:Courier,monospace">dnl</span>' feature - perhaps by terminating a multiline with "<span style="font-family:Courier,monospace">%}.</span>" instead of "<span style="font-family:Courier,monospace">%}</span>"</li>
@@ -194,6 +227,20 @@ TODO:
   <li>support <span style="font-family:Courier,monospace">$foo['index']</span> and maybe <span style="font-family:Courier,monospace">$foo.bar</span> and <span style="font-family:Courier,monospace">$foo.bar()</span></li>
   <li>remove escapes from browser; there's no hook, but a sick hack might be to wrap <span style="font-family:Courier,monospace">stripHTML()</span></li>
 </ul>
+
+<h2>Licence</h2>
+<p>
+Copyright 2010 Isaac Wilcox.  This program is free software: you can
+redistribute it and/or modify it under the terms of the
+<a href="http://www.gnu.org/licenses/gpl-3.0.html">GNU General Public License version 3</a>
+as published by the Free Software Foundation.
+</p>
+
+<h2>Support</h2>
+<p>
+You can reach the author at zakwilcox+codeincards@gmail.com.
+</p>
+
 <p><i>$Id$</i></p>
 </body>
 </html>
