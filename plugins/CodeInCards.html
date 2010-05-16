@@ -152,12 +152,14 @@ something like this:
   $myFunc('foo &lt;span id="fm109283749"&gt;fieldContents&lt;span&gt; bar')
   </div>
 <p>
-This works fine but you must avoid double-quotes for the argument to
+This works fine - and is an exception to the rule that brackets aren't allowed in
+<span style="font-family:Courier,monospace">$fn()</span> escapes - but you must
+take care to avoid double-quotes for the argument to
 <span style="font-family:Courier,monospace">myFunc()</span> to prevent a
 clash with Anki's <span style="font-family:Courier,monospace">&lt;span&gt;</span>
 tag attribute.  If your <span style="font-family:Courier,monospace">%(string)s</span>
-might contain single quotes then you'll have to use tripled single quotes
-around it.  If it might contain tripled single quotes, that's probably a sign
+might contain single quotes then you'll have to use Python's tripled quotes
+around it.  If it might contain tripled quotes, that's probably a sign
 from the Gods.
 </p>
 
