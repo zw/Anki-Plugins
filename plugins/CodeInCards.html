@@ -39,62 +39,60 @@ The following escape formats are supported.  The dollar-formats aim for brevity
 over flexibility:
 </p>
 
-<p>
   <div style="color:blue; margin-left:3em; font-family:Courier,monospace">
   $varName
   </div>
-  <div style="margin-left:6em; max-width:35em; ">
+    <div style="margin-left:6em; max-width:35em; ">
     Interpolate variable "varName".  Subscripting and dot-whatever
-    isn't supported (yet!) but you can use another format.
-  </div>
-</p>
+    isn't supported (yet!); use the bracketed format below instead.
+    </div>
 
-<p>
   <div style="color:blue; margin-left:3em; font-family:Courier,monospace">
   $functionName(...)
   </div>
-  <div style="margin-left:6em; max-width:35em; ">
-    Invoke <span style="font-family:Courier,monospace">functionName</span> with the supplied args, and interpolate the returned
-    string, e.g.:
-  </div>
-  <div style="margin-left:9em; margin-top:1em; margin-bottom:1em; font-family:Courier,monospace">
-      $myFunc(myVar, "another arg")
-  </div>
-  <div style="margin-left:6em; max-width:35em; ">
-    When you save this in the card template editor:
-  </div>
-    <div style="margin-left:9em; margin-top:1em; margin-bottom:1em; font-family:Courier,monospace">
-      $myFunc('foo %(fieldName)s bar')
-    </div>
-  <div style="margin-left:6em; max-width:35em; ">
-    ...Anki regenerates the HTML for all the cards, which expands
-    <span style="font-family:Courier,monospace">%(fieldName)s</span>
-    and wraps it in some formatting code.  By the time the card gets rendered
-    for (p)review and CodeInCards escapes get interpreted, CodeInCards will see
-    something like this:
-  </div>
-    <div style="margin-left:9em; margin-top:1em; margin-bottom:1em; font-family:Courier,monospace">
-      $myFunc('foo &lt;span id="fm109283749"&gt;fieldContents&lt;span&gt; bar')
-    </div>
-  <p style="margin-left:6em; max-width:35em;">
-    This works fine but you must avoid double-quotes for the argument to
-    <span style="font-family:Courier,monospace">myFunc()</span> to prevent a
-    clash with Anki's <span style="font-family:Courier,monospace">&lt;span&gt;</span>
-    tag attribute.
-  </p>
-  <p style="margin-left:6em; max-width:35em;">
-    Apart from this special case, closing brackets are not allowed in the args
-    (that's the price you pay for a compact escape format), so you can't say
-    either of these in dollar-format:
-  </p>
-    <div style="margin-left:9em; margin-top:1em; margin-bottom:1em; font-family:Courier,monospace">
+    <p style="margin-left:6em; max-width:35em; ">
+    Invoke <span style="font-family:Courier,monospace">functionName</span>
+    with the supplied args, and interpolate the returned string, e.g.:
+    </p>
+      <div style="margin-left:9em; font-family:Courier,monospace">
+      $myFunc(myVar, 'a string arg')
+      </div>
+    <p style="margin-left:6em; max-width:35em; ">
+    The args list is considered to stop at the next closing bracket, even if
+    it occurs in a string or after a nested function call, so these won't work:
+    </p>
+      <div style="margin-left:9em; font-family:Courier,monospace">
       $wontWork("a (broken) example")<br/>
       $alsoWontWork("some text", anotherFunc())
-    </div>
-  <div style="margin-left:6em; max-width:35em; ">
-    Instead, use the bracketed forms below to achieve this.
-  </div>
-</p>
+      </div>
+    <p style="margin-left:6em; max-width:35em; ">
+    ...but see <a href="#fieldsubst">Field Substitution</a> below for an exception.
+    </p>
+    <p style="margin-left:6em; max-width:35em; ">
+    If you're intent on sticking with the dollar-format then you can usually
+    hack around the string case above using Python's <span style="font-family:Courier,monospace">u''</span>
+    string format and the escape <span style="font-family:Courier,monospace">\u0029</span>,
+    or perhaps just the HTML entity <span style="font-family:Courier,monospace">&amp;#x0029;</span>:
+    </p>
+      <div style="margin-left:9em; font-family:Courier,monospace">
+      $willWork(u"a \u0028working\u0029 example")<br/>
+      $willWork("a <span style="font-family:Courier,monospace">&amp;#x0028;</span>working<span style="font-family:Courier,monospace">&amp;#x0029;</span> example")<br/>
+      $stillWontWork("some text", anotherFunc())
+      </div>
+    <p style="margin-left:6em; max-width:35em; ">
+    but the function call case still won't work and it might be easier
+    just to use the bracketed forms below instead in both cases.
+    </p>
+    <p style="margin-left:6em; max-width:35em; ">
+    You can split a function call over multiple lines:
+    </p>
+      <div style="margin-left:9em; font-family:Courier,monospace">
+      $quotation('''<br/>
+      Many were increasingly of the opinion that they'd all made a big mistake<br/>
+      in coming down from the trees in the first place. And some said that even<br/>
+      the trees had been a bad move, and that no one should ever have left the oceans.<br/>
+      ''')
+      </div>
 
 <p>
 The bracketed formats are more flexible but more verbose:
@@ -134,6 +132,36 @@ The bracketed formats are more flexible but more verbose:
       %}<br/>
   </div>
 </p>
+
+<h3 id="fieldsubst">Field substitution</h3>
+
+<p>
+When you save this in the card template editor:
+</p>
+  <div style="margin-left:3em; font-family:Courier,monospace">
+  $myFunc('foo %(fieldName)s bar')
+  </div>
+<p>
+...Anki regenerates the HTML for all the cards, which expands
+<span style="font-family:Courier,monospace">%(fieldName)s</span>
+and wraps it in some formatting code.  By the time the card gets rendered
+for (p)review and CodeInCards escapes get interpreted, CodeInCards will see
+something like this:
+</p>
+  <div style="margin-left:3em; font-family:Courier,monospace">
+  $myFunc('foo &lt;span id="fm109283749"&gt;fieldContents&lt;span&gt; bar')
+  </div>
+<p>
+This works fine but you must avoid double-quotes for the argument to
+<span style="font-family:Courier,monospace">myFunc()</span> to prevent a
+clash with Anki's <span style="font-family:Courier,monospace">&lt;span&gt;</span>
+tag attribute.  If your <span style="font-family:Courier,monospace">%(string)s</span>
+might contain single quotes then you'll have to use tripled single quotes
+around it.  If it might contain tripled single quotes, that's probably a sign
+from the Gods.
+</p>
+
+<h2>Execution Environment</h2>
 
 <p>
 Code in libraries is executed when Anki loads the CodeInCards plugin.  Code in
