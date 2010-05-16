@@ -26,4 +26,27 @@ H3O = "H<sub>3</sub>O<sup>+</sup>"
 H2O = "H<sub>2</sub>O"
 CO2 = "CO<sub>2</sub>"
 
+import re
+import logging
+LOG_FILENAME = '/tmp/cic-zak.out'
+logging.basicConfig(filename=LOG_FILENAME,level=logging.CRITICAL)
+#logging.basicConfig(filename=LOG_FILENAME,level=logging.DEBUG)
+
+import sys
+ETREE_PATH    = "/opt/local/Library/Frameworks/Python.framework/Versions/2.6/lib/python2.6/"
+ETREE_PATH2   = "/opt/local/Library/Frameworks/Python.framework/Versions/2.6/lib/python2.6/lib-dynload/"
+MARKDOWN_PATH = "/opt/local/Library/Frameworks/Python.framework/Versions/2.6/lib/python2.6/site-packages/"
+sys.path.extend([MARKDOWN_PATH,ETREE_PATH,ETREE_PATH2])
+import markdown
+
+def md(text):
+        logging.debug("prebr text is " + text)
+        text = re.sub("<br\s*/>", "\n", text)
+        logging.debug("postbr premd text is " + text)
+        text = markdown.markdown(text)
+        logging.debug("postmd prehack text is " + text)
+        text = re.sub("\n", "", text)
+        logging.debug("posthack text is " + text)
+        return text
+
 # vim: softtabstop=8 shiftwidth=8 expandtab
