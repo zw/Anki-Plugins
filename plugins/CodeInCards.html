@@ -1,8 +1,9 @@
-<html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
 <head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <title>CodeInCards - Anki plugin</title>
   <link rel="stylesheet" type="text/css" href="anki.css" />
-  <meta charset="utf-8">
 </head>
 <body>
 <h1>CodeInCards - an Anki plugin to embed Python code in cards/card templates</h1>
@@ -98,40 +99,36 @@ over flexibility:
 The bracketed formats are more flexible but more verbose:
 </p>
 
-<p>
   <div style="color:blue; margin-left:3em; font-family:Courier,monospace">
   {%= &lt;expression&gt; %}
   </div>
-  <div style="margin-left:6em; max-width:35em; ">
+    <p style="margin-left:6em; max-width:35em; ">
     Evaluates &lt;expression&gt; (a single expression) and substitutes
     result.  For example:
-  </div>
-  <div style="margin-left:9em; margin-top:1em; margin-bottom:1em; font-family:Courier,monospace">
+    </p>
+      <div style="margin-left:9em; font-family:Courier,monospace">
       {%= 6 * 9 %}
-  </div>
-  <div style="margin-left:6em; max-width:35em; ">
+      </div>
+    <p style="margin-left:6em; max-width:35em; ">
     will yield "54" in the card or template (or "42" if you're a Hitchiker's Guide fan).  Function
     calls also work (brackets and all), e.g.:
-  </div>
-  <div style="margin-left:9em; margin-top:1em; margin-bottom:1em; font-family:Courier,monospace">
+    </p>
+      <div style="margin-left:9em; font-family:Courier,monospace">
       {%= functionName("a (working) example", someOtherFunc()) %}
-  </div>
-</p>
+      </div>
 
-<p>
   <div style="color:blue; margin-left:3em; font-family:Courier,monospace">
   {% &lt;code&gt; %}
   </div>
-  <div style="margin-left:6em">
+    <p style="margin-left:6em">
     Executes &lt;code&gt;.  Anything printed to <span style="font-family:Courier,monospace">sys.stdout</span> gets substituted, e.g.:
-  </div>
-  <div style="margin-left:9em; margin-top:1em; margin-bottom:1em; font-family:Courier,monospace">
+    </p>
+      <div style="margin-left:9em; font-family:Courier,monospace">
       {%<br/>
       if random.randint(0, 1000000) == 42:<br/>
       <span style="white-space:pre">        print "The Ultimate Answer!"</span><br/>
       %}<br/>
-  </div>
-</p>
+      </div>
 
 <h3 id="fieldsubst">Field substitution</h3>
 
@@ -201,7 +198,7 @@ substitution library has errors this'll be flagged up with the normal plugin
 error dialog when Anki loads CodeInCards.  If an escape contains code with
 errors then the error will get interpolated as a big red HTML-ised string every
 time you (p)review the card.
-<p>
+</p>
 
 <p>
 The string "&lt;br /&gt;" is removed from within code if present before
