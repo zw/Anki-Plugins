@@ -173,7 +173,7 @@ def prettyError(code, trace):
 def getLibraryDir():
         # For testing:
         # p = "/Users/zak/Library/Application Support/Anki/plugins/CodeInCards"
-        p = ankiqt.mw.pluginsFolder() + "/CodeInCards"
+        p = os.path.join(ankiqt.mw.pluginsFolder(), "CodeInCards")
         if not os.path.exists(p):
                 os.mkdir(p)
         return p
