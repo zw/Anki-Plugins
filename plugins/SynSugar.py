@@ -39,6 +39,12 @@ def ent_subst(match):
         # Pass through bad names unchanged
         return match.group()
 
+def reallySplit(tags):
+        splitTags = []
+        for t in tags:
+                splitTags.extend(t.split())
+        return splitTags
+
 def formatQA(html, type, cid, mid, fact, tags, cm):
         # html is what Anki has already generated
         html = re.sub("&amp;(?P<entname>[a-zA-Z0-9]+);", "&\g<entname>;", html)
@@ -54,7 +60,8 @@ def formatQA(html, type, cid, mid, fact, tags, cm):
         html = re.sub('(?<= )---(?= )', "&mdash;", html)
 
         logging.debug("tags are " + str(tags))
-        if NO_MARKDOWN_TAG not in tags:
+        logging.debug("fixed tags are " + str(reallySplit(tags)))
+        if NO_MARKDOWN_TAG not in reallySplit(tags):
                 # Can't do this - span doesn't wrap quite the whole side when there are templates
                 #logging.debug("pre strip:\n" + html)
                 #html = re.sub('^<span[^>]*>', "", html)
