@@ -17,8 +17,10 @@ import sys
 import re
 from types import *
 import logging
-LOG_FILENAME = '/tmp/TypedTextImporter.out'
-logging.basicConfig(filename=LOG_FILENAME,level=logging.CRITICAL)
+#LOG_FILENAME = '/tmp/TypedTextImporter.out'
+#logging.basicConfig(filename=LOG_FILENAME,level=logging.CRITICAL)
+def nuffink(s): pass
+logging.debug = nuffink
 
 TTI_FILE = u"/Users/zak/stuff/medicine/SRS scratchpad.txt"
 IMPORT_KEY=u"Z"
@@ -136,6 +138,10 @@ class TypedTextImporter(anki.importing.Importer):
                         if self.curState == 'between_facts':
                                 logging.debug("between facts handler")
 
+                                match = re.search("^st: (?P<tags>.*)$", line)
+                                if match:
+                                        self.sharedTags += " " + match.group('tags')
+                                        continue
                                 match = re.search("^m: (?P<modelname>.+)$", line)
                                 if match:
                                         logging.debug("found an m: line")
