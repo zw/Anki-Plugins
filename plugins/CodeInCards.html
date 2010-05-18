@@ -96,7 +96,14 @@ over flexibility:
       </div>
 
 <p>
-The bracketed formats are more flexible but more verbose:
+The bracketed formats are more flexible but more verbose.  They accept
+multiple lines and brackets are allowed; the only banned string is
+<span style="font-family:Courier,monospace">%}</span>.  Note that in card
+templates you'll need to use
+<span style="font-family:Courier,monospace">{%% ... %%}</span>
+and <span style="font-family:Courier,monospace">{%%= ... %%}</span> instead
+because Anki uses % for field value substitutions (a poor choice of escape
+characters on my part).
 </p>
 
   <div style="color:blue; margin-left:3em; font-family:Courier,monospace">
@@ -130,6 +137,15 @@ The bracketed formats are more flexible but more verbose:
       %}<br/>
       </div>
 
+You can type a literal '$' as <span style="font-family:Courier,monospace">$$</span>.
+
+You can separate a simple variable substitution from the surrounding text
+without introducing trailing whitespace by using a trailing exclamation mark,
+so if <span style="font-family:Courier,monospace">ABOUT</span> was set to
+<span style="font-family:Courier,monospace">"~"</span> then
+<span style="font-family:Courier,monospace">$ABOUT!ten</span> would yield
+<span style="font-family:Courier,monospace">~ten</span>.
+
 <h3 id="fieldsubst">Field substitution</h3>
 
 <p>
@@ -149,15 +165,17 @@ something like this:
   $myFunc('foo &lt;span id="fm109283749"&gt;fieldContents&lt;span&gt; bar')
   </div>
 <p>
-This works fine - and is an exception to the rule that brackets aren't allowed in
-<span style="font-family:Courier,monospace">$fn()</span> escapes - but you must
-take care to avoid double-quotes for the argument to
+Provided <span style="font-family:Courier,monospace">fieldContents</span>
+doesn't contain any brackets itself, this works fine - and is an exception to
+the rule that brackets aren't allowed in <span style="font-family:Courier,monospace">$fn()</span>
+escapes - but you must take care to avoid double-quotes for the argument to
 <span style="font-family:Courier,monospace">myFunc()</span> to prevent a
 clash with Anki's <span style="font-family:Courier,monospace">&lt;span&gt;</span>
 tag attribute.  If your <span style="font-family:Courier,monospace">%(string)s</span>
 might contain single quotes then you'll have to use Python's tripled quotes
-around it.  If it might contain tripled quotes, that's probably a sign
-from the Gods.
+around it.  If it might contain closing brackets then you'll have to use
+<span style="font-family:Courier,monospace">{% ... %}</span> syntax.  If it might
+contain tripled quotes, that's probably a sign from the Gods.
 </p>
 
 <h2>Execution Environment</h2>
@@ -249,8 +267,8 @@ warned!
 
 <ul>
   <li>add individual fact fields alongside <span style="font-family:Courier,monospace;">QorA</span> and <span style="font-family:Courier,monospace">card</span> in a dict (need to marry up <span style="font-family:Courier,monospace">card.fact.values</span> with <span style="font-family:Courier,monospace">card.model.names</span>)</li>
+  <li>provide a way to get called back before/after substitution of a card; perhaps have CIC look for <span style="font-family:Courier,monospace">CICstart</span> and <span style="font-family:Courier,monospace">CICstop</span> within a library module and call them if they exist</li>
   <li>implement m4's '<span style="font-family:Courier,monospace">dnl</span>' feature - perhaps by terminating a multiline with "<span style="font-family:Courier,monospace">%}.</span>" instead of "<span style="font-family:Courier,monospace">%}</span>"</li>
-  <li>reload libraries without restarting Anki; you might be able to hack this by using <span style="font-family:Courier,monospace">reload(yourModule)</span> in escapes</li>
   <li>support <span style="font-family:Courier,monospace">$foo['index']</span> and maybe <span style="font-family:Courier,monospace">$foo.bar</span> and <span style="font-family:Courier,monospace">$foo.bar()</span></li>
   <li>remove escapes from browser; there's no hook, but a sick hack might be to wrap <span style="font-family:Courier,monospace">stripHTML()</span></li>
 </ul>

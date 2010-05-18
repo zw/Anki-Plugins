@@ -36,18 +36,14 @@ import textwrap
 
 import anki
 import ankiqt
+import ankiqt.ui.utils
 
 import PyQt4.QtCore
 import PyQt4.QtGui
 
-# For debugging.
-#import logging
-#LOG_FILENAME = '/tmp/codeincards.out'
-#logging.basicConfig(filename=LOG_FILENAME,level=logging.DEBUG)
-
 CONFIG_KEY = 'CodeInCards.trustedDecks'
 
-modules = []
+modulesMap = {}
 libsSymtab = {}
 showHTML = False
 QorA = None
@@ -71,7 +67,7 @@ def evalSide(html, _card, _QorA):
 
         # The {%= ... %} takes precedence by being subbed first.
         # Don't want to make it a parameter.
-        html = re.sub("""(?x)
+        html = re.sub("""(?xms)        # multiline mostly in case field substs are!
                          \{\%=         # opening tag
                          \s*           # eat leading whitespace
                          (?P<expr>.+?) # any old content, non-greedy
@@ -79,7 +75,7 @@ def evalSide(html, _card, _QorA):
                                        # will work on a single line
                          \%\}          # closing tag
                          """, substEval, html)
-        html = re.sub("""(?xms)
+        html = re.sub("""(?xms)        # multiline because code block might be
                          \{\%          # opening tag
                          \s*           # eat leading whitespace
                          (?P<code>.+?) # any old content; non-greedy
@@ -92,13 +88,17 @@ def evalSide(html, _card, _QorA):
                          \$            # leading dollar
                          (?P<expr>     # start capture
                             [a-zA-Z_]\w*   # standard identifier rules
-                            (?:           # start group optional args list
+                            (?P<args>      # start group optional args list
+                                           # named only for later reference
                                \(            # start args list
                                [^)]*         # greedily include all non-brackets
                                \)            # end args list
                             )?            # end group optional args list
                          )             # finish capture
+                         (?(args)|!?)  # eat an optional pling if no args
                          """, substEval, html)
+        html = re.sub('\$\$', '$', html)
+
         if showHTML:
                 html = re.sub("<", "&lt;", html)
                 html = re.sub(">", "&gt;", html)
@@ -181,24 +181,42 @@ def getLibraryDir():
 def getLibraries():
         return [p for p in os.listdir(getLibraryDir()) if p.endswith(".py")]
 
-def buildSymtab():
+def buildSymtab(modules):
         "Build a pooled symtab with symbols from all substitution libraries, plus 'CIC' alias for this module"
+        global libsSymtab
+        libsSymtab = {}
         for m in modules:
                 libsSymtab.update(dict([(symbol, getattr(m, symbol)) for symbol in dir(m)]))
         libsSymtab.update({'CIC': sys.modules[__name__]})
-        return libsSymtab
 
 def loadLibraries():
-        "Import all modules found in %pluginsDir%/CodeInCards/*.py and build a pooled symtab"
-        sys.path.insert(0, getLibraryDir())
-        for lib in getLibraries():
+        "Import or reload all modules found in %pluginsDir%/CodeInCards/*.py and build a pooled symtab"
+        global modulesMap
+        libraries = getLibraries()
+
+        # Out with modules that have disappeared, if any.
+        for nopy in modulesMap.keys():
+                if (nopy + ".py") not in libraries:
+                        del modulesMap[nopy]
+        # Load or reload each lib with a .py
+        for lib in libraries:
+                nopy = lib.replace(".py", "")
                 try:
-                        nopy = lib.replace(".py", "")
-                        modules.append(__import__(nopy))
+                        if nopy not in modulesMap:
+                                modulesMap[nopy] = __import__(nopy)
+                        else:
+                                reload(modulesMap[nopy])
                 except:
                         print >>sys.stderr, "Error in %s" % lib
                         traceback.print_exc()
-        buildSymtab()
+        buildSymtab(modulesMap.values())
+
+def onReloadLibraries():
+        try:
+                loadLibraries()
+                ankiqt.ui.utils.showInfo("Libraries reloaded.")
+        except Exception as e:
+                raise e
 
 def safeSubst(match):
         "Leave code escape untouched, and flag the need to show 'deck not trusted' message"
@@ -278,11 +296,17 @@ def init():
         ankiqt.mw.connect(action, PyQt4.QtCore.SIGNAL("triggered()"), onConfigureTrust)
         ankiqt.mw.mainWin.menuAdvanced.addAction(action)
 
-        loadLibraries()
+        action = PyQt4.QtGui.QAction(ankiqt.mw)
+        action.setText("Reload CodeInCards libraries")
+        ankiqt.mw.connect(action, PyQt4.QtCore.SIGNAL("triggered()"), onReloadLibraries)
+        ankiqt.mw.mainWin.menuAdvanced.addAction(action)
 
         anki.hooks.addHook("drawAnswer", evalAnswer)
         anki.hooks.addHook("drawQuestion", evalQuestion)
         anki.hooks.addHook("enableDeckMenuItems", enableDeckMenuItems)
+
+        sys.path.append(getLibraryDir())
+        loadLibraries()
 
 init()
 
