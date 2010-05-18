@@ -59,11 +59,12 @@ A commented example is probably the best documentation.  Click this <button type
 # Trailing whitespace is discarded from all lines.<br/>
 # Empty lines are skipped unless we're in the middle of a fact.<br/>
 # "st: " introduces space-separated tags that apply to all facts in the file<br/>
-# You could add them at import, but I prefer to do it here.<br/><br/></span>st: ttd.2010-04-26T1000 ttx.cvs.L2
+# You could add them at import, but I prefer to do it here.<br/>
+# You can give it multiple times and also later between facts, but it's always additive.<br/><br/></span>st: ttd.2010-04-26T1000 ttx.cvs.L2
 
 ###############################
 <span class="impcomm"># "m: " names a model to be used for the facts that follow.<br/>
-# The name must match Settings->Deck Properties->Models & Priorities->General & Fields->General->Name<br/></span>m: Acronyms etc
+# The name must match Settings-&gt;Deck Properties-&gt;Models &amp; Priorities-&gt;General &amp; Fields-&gt;General-&gt;Name<br/></span>m: Acronyms etc
 <span class="impcomm"># I find it useful to list the fields in the model.<br/></span># contraction, expansion, context, mnemonic, source
 
 <span class="impcomm"># Once a model is set, a non-blank line begins a fact.<br/></span>PDGF <span class="impcomm"># this will be assigned to the first field of the model</span>
