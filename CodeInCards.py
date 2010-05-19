@@ -154,7 +154,7 @@ def realSubstEval(match):
 def copySymtab():
         "Clone the pooled symtab and insert some convenience symbols"
         tempSymtab = libsSymtab.copy()
-        tempSymtab.update({'QorA': QorA, 'card': card})
+        tempSymtab.update({'QorA': QorA, 'card': card, 'isSummary': isSummary})
         return tempSymtab
 
 def prettyError(code, trace):
