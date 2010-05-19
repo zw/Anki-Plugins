@@ -68,6 +68,9 @@ BC = "&#x2235;"
 POS = "<span style='color:green; font-weight:bold; '>&oplus;</span>"
 NEG = "<span style='color:red; font-weight:bold; '>&#x02296;</span>"
 
+# Interrobang
+IBANG = "&#x203D"
+
 import re
 #import logging
 #LOG_FILENAME = '/tmp/cic-zak.out'
