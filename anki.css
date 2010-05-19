@@ -38,4 +38,7 @@ p {
   max-width:40em;
 }
 
-/* $Id$ */
+.code {
+  font-family:Courier,monospace;
+  font-weight:bold;
+}

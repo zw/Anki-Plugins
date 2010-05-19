@@ -13,23 +13,69 @@
 <p>
 This <a href="http://ichi2.net/anki/">Anki</a> plugin loads substition
 "libraries" of <a href="http://www.python.org/">Python</a> functions and variables from
-<span style="font-family:Courier,monospace">%pluginsFolder%/CodeInCards/*.py</span>
+<span class="code">%pluginsFolder%/CodeInCards/*.py</span>
 then provides syntax to let you substitute the results of library calls (or indeed
 any other arbitrary Python code) into cards and/or card templates.
 </p>
 
+<p>
+You won't be able to do much with this plugin without some Python and/or
+programming experience, or a geeky friend who's <a href="fix.jpg">very generous with their time</a>
+(and writing escapes/libraries for Anki is not a good way to start learning
+&mdash; see <a href="http://wiki.python.org/moin/BeginnersGuide">the Python Beginners' Guide</a>
+for that).  On the other hand, if you do have the experience then you have the
+full power of Python at your disposal.
+</p>
+
+<h2 id="security">Security</h2>
+
 <p style="color:red; font-size:larger">Warning: This plugin is a potential
-security hole.  Please read the section <a href="#security">"Security"</a>
-below before deciding whether to install the plugin.</p>
+security hole.  Please don't install it until you've read and understood
+the explanation below and weighed up the risks.</p>
+
+<p>
+Like any feature that provides ways to execute code, installing this plugin
+turns every deck into a potential security hole, just as turning on macros
+in a spreadsheet program does.  If someone/something deliberately or
+accidentally causes you to run CodeInCards escapes you didn't write, or even if
+you just write buggy escapes, it could lead to you losing data and/or control
+of your computer (e.g. getting infected with viruses and trojans).
+</p>
+
+<p>
+To minimise this risk, CodeInCards will only execute escapes in decks it
+trusts.  Decks are untrusted by default and use of escapes in an untrusted deck
+will generate a warning message instead of running them.</p>
 
 <h2>Installation</h2>
 
 <p>
 Download using <a href="http://ichi2.net/anki/wiki/Plugins">Anki's plugin
-browser</a> in the normal way; search for "codeincards".  You may also want the <a
-href="default.py">example library</a> which you should save in the <span
-style="font-family:Courier,monospace">%pluginsFolder%/CodeInCards/</span>
-directory.
+browser</a> in the normal way; search for "codeincards".  You may also want to
+look at the <a href="http://github.com/zw/Anki-Plugins/blob/master/CodeInCards/default.py">example library</a>
+for inspiration.  You can also <a href="http://github.com/zw/Anki-Plugins/raw/master/CodeInCards/default.py">download this library</a>
+and save it in the <span class="code">%pluginsFolder%/CodeInCards/</span>
+directory if you'd like to try it.
+</p>
+
+<h2>Trust</h2>
+
+<p>
+To trust a deck use "Tools&rarr;Advanced&rarr;CodeInCards Deck Trust&hellip;".
+<span style="color:red;">
+You are strongly advised to trust only those decks which you've built yourself,
+from scratch, and which are not shared or synchronised online.  You have been
+warned!</span>
+</p>
+
+<p>
+Deck trust settings are per installation &mdash; a deck trusted by you and
+exported/shared will not be trusted by anyone else unless they go through this
+step too.  Similarly, if someone e-mails you a deck or you download one, you
+would have to explicitly trust it for any CodeInCards escapes to run.  The
+deck's creation time and name are used together as an identifier, so if you use
+the OS to copy a deck you already trust and give it the same name then the copy
+will be trusted too (but again, only by your installation).
 </p>
 
 <h2>Syntax</h2>
@@ -43,16 +89,16 @@ over flexibility:
   <div style="color:blue; margin-left:3em; font-family:Courier,monospace">
   $varName
   </div>
-    <div style="margin-left:6em; max-width:35em; ">
+    <p style="margin-left:6em; max-width:35em; ">
     Interpolate variable "varName".  Subscripting and dot-whatever
     isn't supported (yet!); use the bracketed format below instead.
-    </div>
+    </p>
 
   <div style="color:blue; margin-left:3em; font-family:Courier,monospace">
-  $functionName(...)
+  $functionName(&hellip;)
   </div>
     <p style="margin-left:6em; max-width:35em; ">
-    Invoke <span style="font-family:Courier,monospace">functionName</span>
+    Invoke <span class="code">functionName</span>
     with the supplied args, and interpolate the returned string, e.g.:
     </p>
       <div style="margin-left:9em; font-family:Courier,monospace">
@@ -67,17 +113,17 @@ over flexibility:
       $alsoWontWork("some text", anotherFunc())
       </div>
     <p style="margin-left:6em; max-width:35em; ">
-    ...but see <a href="#fieldsubst">Field Substitution</a> below for an exception.
+    &hellip;but see <a href="#fieldsubst">Field Substitution</a> below for an exception.
     </p>
     <p style="margin-left:6em; max-width:35em; ">
     If you're intent on sticking with the dollar-format then you can usually
-    hack around the string case above using Python's <span style="font-family:Courier,monospace">u''</span>
-    string format and the escape <span style="font-family:Courier,monospace">\u0029</span>,
-    or perhaps just the HTML entity <span style="font-family:Courier,monospace">&amp;#x0029;</span>:
+    hack around the string case above using Python's <span class="code">u''</span>
+    string format and the escape <span class="code">\u0029</span>,
+    or perhaps just the HTML entity <span class="code">&amp;#x0029;</span>:
     </p>
       <div style="margin-left:9em; font-family:Courier,monospace">
       $willWork(u"a \u0028working\u0029 example")<br/>
-      $willWork("a <span style="font-family:Courier,monospace">&amp;#x0028;</span>working<span style="font-family:Courier,monospace">&amp;#x0029;</span> example")<br/>
+      $willWork("a <span class="code">&amp;#x0028;</span>working<span class="code">&amp;#x0029;</span> example")<br/>
       $stillWontWork("some text", anotherFunc())
       </div>
     <p style="margin-left:6em; max-width:35em; ">
@@ -98,12 +144,7 @@ over flexibility:
 <p>
 The bracketed formats are more flexible but more verbose.  They accept
 multiple lines and brackets are allowed; the only banned string is
-<span style="font-family:Courier,monospace">%}</span>.  Note that in card
-templates you'll need to use
-<span style="font-family:Courier,monospace">{%% ... %%}</span>
-and <span style="font-family:Courier,monospace">{%%= ... %%}</span> instead
-because Anki uses % for field value substitutions (a poor choice of escape
-characters on my part).
+<span class="code">%}</span>.
 </p>
 
   <div style="color:blue; margin-left:3em; font-family:Courier,monospace">
@@ -123,12 +164,13 @@ characters on my part).
       <div style="margin-left:9em; font-family:Courier,monospace">
       {%= functionName("a (working) example", someOtherFunc()) %}
       </div>
+    <p style="margin-left:6em; max-width:35em; "></p>
 
   <div style="color:blue; margin-left:3em; font-family:Courier,monospace">
   {% &lt;code&gt; %}
   </div>
     <p style="margin-left:6em">
-    Executes &lt;code&gt;.  Anything printed to <span style="font-family:Courier,monospace">sys.stdout</span> gets substituted, e.g.:
+    Executes &lt;code&gt;.  Anything printed to <span class="code">sys.stdout</span> gets substituted, e.g.:
     </p>
       <div style="margin-left:9em; font-family:Courier,monospace">
       {%<br/>
@@ -137,14 +179,29 @@ characters on my part).
       %}<br/>
       </div>
 
-You can type a literal '$' as <span style="font-family:Courier,monospace">$$</span>.
+<p>
+Note that in card templates you'll need to use
+<span class="code">{%%&nbsp;&hellip;&nbsp;%%}</span>
+and <span class="code">{%%=&nbsp;&hellip;&nbsp;%%}</span> instead
+because Anki uses <span class="code">%</span> for
+field value substitutions (a poor choice of escape characters on my part).
+</p>
 
+<p>
+You can type a literal '$' as <span class="code">$$</span>.
+</p>
+
+<p>
 You can separate a simple variable substitution from the surrounding text
-without introducing trailing whitespace by using a trailing exclamation mark,
-so if <span style="font-family:Courier,monospace">ABOUT</span> was set to
-<span style="font-family:Courier,monospace">"~"</span> then
-<span style="font-family:Courier,monospace">$ABOUT!ten</span> would yield
-<span style="font-family:Courier,monospace">~ten</span>.
+without introducing trailing whitespace by using a trailing exclamation mark.
+For instance, if <span class="code">ABOUT</span> was set to
+<span class="code">"~"</span> then:
+<ul>
+<li><span class="code">$ABOUTten</span> would give an error.</li>
+<li><span class="code">$ABOUT ten</span> would yield "<span class="code">~&nbsp;ten</span>".</li>
+<li><span class="code">$ABOUT!ten</span> would yield "<span class="code">~ten</span>" which is probably what you want.</li>
+</ul>
+</p>
 
 <h3 id="fieldsubst">Field substitution</h3>
 
@@ -155,8 +212,8 @@ When you save this in the card template editor:
   $myFunc('foo %(fieldName)s bar')
   </div>
 <p>
-...Anki regenerates the HTML for all the cards, which expands
-<span style="font-family:Courier,monospace">%(fieldName)s</span>
+&hellip;Anki regenerates the HTML for all the cards, which expands
+<span class="code">%(fieldName)s</span>
 and wraps it in some formatting code.  By the time the card gets rendered
 for (p)review and CodeInCards escapes get interpreted, CodeInCards will see
 something like this:
@@ -165,57 +222,27 @@ something like this:
   $myFunc('foo &lt;span id="fm109283749"&gt;fieldContents&lt;span&gt; bar')
   </div>
 <p>
-Provided <span style="font-family:Courier,monospace">fieldContents</span>
+Provided <span class="code">fieldContents</span>
 doesn't contain any brackets itself, this works fine - and is an exception to
-the rule that brackets aren't allowed in <span style="font-family:Courier,monospace">$fn()</span>
+the rule that brackets aren't allowed in <span class="code">$fn()</span>
 escapes - but you must take care to avoid double-quotes for the argument to
-<span style="font-family:Courier,monospace">myFunc()</span> to prevent a
-clash with Anki's <span style="font-family:Courier,monospace">&lt;span&gt;</span>
-tag attribute.  If your <span style="font-family:Courier,monospace">%(string)s</span>
+<span class="code">myFunc()</span> to prevent a
+clash with Anki's <span class="code">&lt;span&gt;</span>
+tag attribute.  If your <span class="code">%(string)s</span>
 might contain single quotes then you'll have to use Python's tripled quotes
 around it.  If it might contain closing brackets then you'll have to use
-<span style="font-family:Courier,monospace">{% ... %}</span> syntax.  If it might
+<span class="code">{%&nbsp;&hellip;&nbsp;%}</span> syntax.  If it might
 contain tripled quotes, that's probably a sign from the Gods.
 </p>
 
 <h2>Execution Environment</h2>
 
+<h3 id="escapes">Escapes</h3>
 <p>
-Code in libraries is executed when Anki loads the CodeInCards plugin.  Code in
-escapes is executed at the point that the card gets displayed.
-</p>
-
-<p>
-The CodeInCards module provides the following symbols for use by libraries:
-</p>
-<dl style="margin-left:3em;">
-  <dt style="font-weight:bold; font-family:Courier,monospace">QorA</dt>
-  <dd>'q' or 'a', depending on which side of the card is being rendered</dd>
-  <dt style="font-weight:bold; font-family:Courier,monospace">card</dt>
-  <dd>the card being rendered; see the Anki source for structure details</dd>
-  <dt style="font-weight:bold; font-family:Courier,monospace">showHTML</dt>
-  <dd>if <span style="font-weight:bold; font-family:Courier,monospace">True</span>, escape the HTML before rendering; this can aid in debugging an escape</dd>
-</dl>
-
-<p>
-Escapes have access to all globals in your libraries, plus the following
-symbols provided for convenience/brevity:
-</p>
-<dl style="margin-left:3em;">
-  <dt style="font-weight:bold; font-family:Courier,monospace">CIC</dt>
-  <dd>can be used as if you had said <span style="font-weight:bold; font-family:Courier,monospace">import CodeInCards as CIC</span> at the start of your escape</dd>
-  <dt style="font-weight:bold; font-family:Courier,monospace">QorA</dt>
-  <dd>same as saying <span style="font-weight:bold; font-family:Courier,monospace">CIC.QorA</span></dd>
-  <dt style="font-weight:bold; font-family:Courier,monospace">card</dt>
-  <dd>same as saying <span style="font-weight:bold; font-family:Courier,monospace">CIC.card</span></dd>
-</dl>
-
-<p>
-Compile error handling depends on where the erroneous code is.  If your
-substitution library has errors this'll be flagged up with the normal plugin
-error dialog when Anki loads CodeInCards.  If an escape contains code with
-errors then the error will get interpolated as a big red HTML-ised string every
-time you (p)review the card.
+Code in escapes is executed at the point that the card gets displayed, and also
+whenever the card gets displayed in the cards list.  If an escape contains code
+with errors then the error will get interpolated as a big red HTML-ised string
+every time you (p)review the card.
 </p>
 
 <p>
@@ -228,49 +255,43 @@ not to style any part of an escape entered in a card editor field, and
 note that &lt; and &gt; will cause cryptic problems.
 </p>
 
-
-<h2 id="security">Security</h2>
+<h3 id="libraries">Libraries</h3>
 <p>
-Like any feature that provides ways to execute code, this plugin is inherently
-a potential security hole.  If someone/something deliberately or accidentally
-causes you to run CodeInCard escapes you didn't write, or even if you just
-write buggy escapes, it could lead to you losing data and/or control of your
-computer (e.g. getting infected with viruses and trojans).
+All <span class="code">*.py</span>
+files (Python modules) in the <span class="code">%pluginsFolder%/CodeInCards/</span>
+directory will be loaded (imported) when Anki starts.  Compile errors will be
+flagged up with the normal plugin error dialog at this point.  You can reload
+all libraries using "Tools&rarr;Advanced&rarr;Reload CodeInCards Libraries".
+</p>
+
+<h3 id="symbols">Symbols</h3>
+<p>
+Libraries should <span class="code">import CodeInCards</span>
+at the top (or <span class="code">import CodeInCards as CIC</span>
+for convenience).  Escapes automatically have the symbol <span class="code">CIC</span>
+referring to the module, for brevity.
 </p>
 
 <p>
-To minimise this risk, CodeInCards will only execute escapes in decks it
-trusts.  Decks are untrusted by default and use of escapes in an untrusted deck
-will generate a warning message instead of running them.  To trust a deck use
-Tools&rarr;Advanced&rarr;CodeInCards Deck Trust... and read the warning.  Deck
-trust settings are per installation - a deck trusted by you and exported/shared
-will not be trusted by anyone else unless they go through this step too.  The
-deck's creation time and name are used together as an identifier, so if you use
-the OS to copy a deck you already trust and give it the same name then the copy
-will be trusted too (but again, only by your installation).
+Escapes have access to all globals in your <a href="#libraries">libraries</a>.
+The following symbols are provided by <span class="code">CIC</span>:
 </p>
-
-<p>
-You are strongly advised to trust only decks which you've built yourself,
-from scratch, and which are not shared or synchronised online.  You have been
-warned!
-</p>
+<dl style="margin-left:3em;">
+  <dt class="code">CIC.showHTML</dt>
+  <dd>If set to <span class="code">True</span> in an escape, show the resulting HTML markup instead of rendering it; this can help when debugging an escape.</dd>
+  <dt class="code">CIC.QorA</dt>
+  <dd>'q' or 'a', depending on which side of the card is being rendered.  You can also use just <span class="code">QorA</span> in escapes.</dd>
+  <dt class="code">CIC.card</dt>
+  <dd>The card being rendered; see the <a href="http://github.com/dae/libanki/blob/master/anki/cards.py">Anki source</a> for structure details.  Warning: this may be <span class="code">None</span> when a card summary is rendered in the browser!  You can also use just <span class="code">card</span> in escapes.</dd>
+  <dt class="code">CIC.isSummary</dt>
+  <dd><span class="code">True</span> if the card side is being rendered in the cards list, <span class="code">False</span> if it's being rendered in a preview or review.</dd>
+</dl>
 
 <h2>Caveats</h2>
 
 <ul>
   <li>At the moment there's no way to prevent the escapes appearing in the browser, so cards start to look quite ugly.</li>
   <li>It's too easy to get carried away and implement your own SRS mini-language packed with syntactic sugar.</li>
-</ul>
-
-<h2>To Do</h2>
-
-<ul>
-  <li>add individual fact fields alongside <span style="font-family:Courier,monospace;">QorA</span> and <span style="font-family:Courier,monospace">card</span> in a dict (need to marry up <span style="font-family:Courier,monospace">card.fact.values</span> with <span style="font-family:Courier,monospace">card.model.names</span>)</li>
-  <li>provide a way to get called back before/after substitution of a card; perhaps have CIC look for <span style="font-family:Courier,monospace">CICstart</span> and <span style="font-family:Courier,monospace">CICstop</span> within a library module and call them if they exist</li>
-  <li>implement m4's '<span style="font-family:Courier,monospace">dnl</span>' feature - perhaps by terminating a multiline with "<span style="font-family:Courier,monospace">%}.</span>" instead of "<span style="font-family:Courier,monospace">%}</span>"</li>
-  <li>support <span style="font-family:Courier,monospace">$foo['index']</span> and maybe <span style="font-family:Courier,monospace">$foo.bar</span> and <span style="font-family:Courier,monospace">$foo.bar()</span></li>
-  <li>remove escapes from browser; there's no hook, but a sick hack might be to wrap <span style="font-family:Courier,monospace">stripHTML()</span></li>
 </ul>
 
 <h2>Licence</h2>
@@ -283,9 +304,9 @@ as published by the Free Software Foundation.
 
 <h2>Support</h2>
 <p>
+Known issues are at <a href="http://github.com/zw/Anki-Plugins/issues">github</a>.
 You can reach the author at zakwilcox+codeincards@gmail.com.
 </p>
 
-<p><i>$Id$</i></p>
 </body>
 </html>

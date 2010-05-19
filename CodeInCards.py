@@ -8,13 +8,12 @@ License version 3 as published by the Free Software Foundation.
 Loads substition "libraries" from %pluginsFolder%/CodeInCards/*.py
 then provides syntax to let you substitute library calls into cards.
 
-Documentation can be found at:
+Documentation can be found in CodeInCards.html or at:
   http://bit.ly/codeincardsdoc
 
-An example library can be found at:
+An example library can be found in CodeInCards/default.py or at:
   http://bit.ly/codeincards
 
-$Id$
 '''
 
 securityWarning = """\
