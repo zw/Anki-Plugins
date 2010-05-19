@@ -305,43 +305,48 @@ def entitySubst(match):
 
 def cardListData(self, index, role, _old=None):
         '''
-        A wrapper around anki.ui.cardlist.DeckModel.data() - i.e. the card list
+        A clone of anki.ui.cardlist.DeckModel.data() - i.e. the card list
         table cell renderer.
         This is a hack and should be patched in Anki to be hookable instead.
         Hooks will want to know:
           - whether they're rendering Q or A (examining index is fragile)
           - the card object (?not available here?)
-
-        'ret' is a QVariant
         '''
-        ret = _old(self, index, role)
-        if not ret.isValid() \
-           or not (role == PyQt4.QtCore.Qt.DisplayRole
-                   or role == PyQt4.QtCore.Qt.EditRole) \
-           or index.column() >= 2:
-                return ret
-        s = ret.toString().__str__()
+        if not index.isValid():
+                return PyQt4.QtCore.QVariant()
+        if role == PyQt4.QtCore.Qt.FontRole:
+                f = PyQt4.QtGui.QFont()
+                f.setPixelSize(self.parent.config['editFontSize'])
+                return PyQt4.QtCore.QVariant(f)
+        if role == PyQt4.QtCore.Qt.TextAlignmentRole and index.column() == 2:
+                return PyQt4.QtCore.QVariant(PyQt4.QtCore.Qt.AlignHCenter)
+        elif role == PyQt4.QtCore.Qt.DisplayRole or role == PyQt4.QtCore.Qt.EditRole:
+                if len(self.cards[index.row()]) == 1:
+                        # not cached yet
+                        self.updateCard(index)
+                s = self.columns[index.column()][1](index)
 
-        # This is the only code we should need once there's a hook.
-        # Note we're setting a local QorA here, not the global.
-        if index.column() == 0:
-                QorA = 'q'
-        elif index.column() == 1:
-                QorA = 'a'
-        s = evalSide(s, None, QorA, True)
+                if index.column() == 0:
+                        QorA = 'q'
+                        s = evalSide(s, None, QorA, True)
+                elif index.column() == 1:
+                        QorA = 'a'
+                        s = evalSide(s, None, QorA, True)
 
-        # Copied straight from original, except more aggressive entity
-        # reference resolution.
-        s = s.replace("<br>", u" ")
-        s = s.replace("<br />", u" ")
-        s = s.replace("\n", u"  ")
-        s = anki.utils.stripHTML(s)
-        s = re.sub("\[sound:[^]]+\]", "", s)
-        s = re.sub("&(?P<entname>[a-zA-Z0-9]+);", entitySubst, s)
-        s = s.strip()
-        # End copy
+                s = re.sub("<li>", u" &bull; ", s)
+                # More aggressive entity reference resolution.
+                s = re.sub("&(?P<entname>[a-zA-Z0-9]+);", entitySubst, s)
 
-        return PyQt4.QtCore.QVariant(s)
+                s = s.replace("<br>", u" ")
+                s = s.replace("<br />", u" ")
+                s = s.replace("\n", u"  ")
+                s = anki.utils.stripHTML(s)
+                s = re.sub("\[sound:[^]]+\]", "", s)
+                s = s.replace("&amp;", "&")
+                s = s.strip()
+                return PyQt4.QtCore.QVariant(s)
+        else:
+                return PyQt4.QtCore.QVariant()
 
 def init():
         action = PyQt4.QtGui.QAction(ankiqt.mw)
