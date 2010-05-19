@@ -33,6 +33,7 @@ import sys
 import os
 import traceback
 import textwrap
+import htmlentitydefs
 
 import anki
 import ankiqt
@@ -40,6 +41,13 @@ import ankiqt.ui.utils
 
 import PyQt4.QtCore
 import PyQt4.QtGui
+import PyQt4.Qt
+
+IGNORED_ESCAPES_WARNING = """\
+<span style='color:red; font-style:italic; '>
+CodeInCards escapes were found but ignored because this deck is not trusted.
+Use menu option 'Tools-&gt;Advanced-&gt;CodeInCards Deck Trust...'
+to change this.</span><br />"""
 
 CONFIG_KEY = 'CodeInCards.trustedDecks'
 
@@ -47,22 +55,24 @@ modulesMap = {}
 libsSymtab = {}
 showHTML = False
 QorA = None
+isSummary = False
 card = None
 substExec = None
 substEval = None
 showTrustMessage = None
 
 def evalQuestion(html, card):
-        return evalSide(html, card, "q")
+        return evalSide(html, card, "q", False)
 
 def evalAnswer(html, card):
-        return evalSide(html, card, "a")
+        return evalSide(html, card, "a", False)
 
-def evalSide(html, _card, _QorA):
-        global showHTML, QorA, card, showTrustMessage
+def evalSide(html, _card, _QorA, _isSummary):
+        global showHTML, QorA, card, isSummary, showTrustMessage
         showHTML = False
         QorA = _QorA
         card = _card
+        isSummary = _isSummary
         showTrustMessage = False
 
         # The {%= ... %} takes precedence by being subbed first.
@@ -99,17 +109,14 @@ def evalSide(html, _card, _QorA):
                          """, substEval, html)
         html = re.sub('\$\$', '$', html)
 
-        if showHTML:
-                html = re.sub("<", "&lt;", html)
-                html = re.sub(">", "&gt;", html)
-                html = "<span style='white-space:pre; font-family:monospace;'>" + html + "</span>"
-        if showTrustMessage:
-                html = ("""<span style='color:red; font-style:italic; '>
-                           CodeInCards escapes were found but ignored because
-                           this deck ('%s') is not trusted.  Use menu option
-                           'Tools-&gt;Advanced-&gt;CodeInCards Deck Trust...'
-                           to change this.</span><br />"""
-                               % (ankiqt.mw.deck.name()) ) + html
+        if not isSummary:
+                if showHTML:
+                        html = re.sub("<", "&lt;", html)
+                        html = re.sub(">", "&gt;", html)
+                        html = "<span style='white-space:pre; font-family:monospace;'>" + html + "</span>"
+                if showTrustMessage:
+                        html += IGNORED_ESCAPES_WARNING
+
         return html
 
 class StringWriter:
@@ -290,6 +297,53 @@ def applyDeckTrust(deck, config):
                 substExec = safeSubst
                 substEval = safeSubst
 
+def entitySubst(match):
+        ''' Replace &entityname; with corresponding entity '''
+        if match.group('entname') in htmlentitydefs.name2codepoint:
+                return unichr(htmlentitydefs.name2codepoint[match.group('entname')])
+        # Pass through bad names unchanged
+        return match.group()
+
+def cardListData(self, index, role, _old=None):
+        '''
+        A wrapper around anki.ui.cardlist.DeckModel.data() - i.e. the card list
+        table cell renderer.
+        This is a hack and should be patched in Anki to be hookable instead.
+        Hooks will want to know:
+          - whether they're rendering Q or A (examining index is fragile)
+          - the card object (?not available here?)
+
+        'ret' is a QVariant
+        '''
+        ret = _old(self, index, role)
+        if not ret.isValid() \
+           or not (role == PyQt4.QtCore.Qt.DisplayRole
+                   or role == PyQt4.QtCore.Qt.EditRole) \
+           or index.column() >= 2:
+                return ret
+        s = ret.toString().__str__()
+
+        # This is the only code we should need once there's a hook.
+        # Note we're setting a local QorA here, not the global.
+        if index.column() == 0:
+                QorA = 'q'
+        elif index.column() == 1:
+                QorA = 'a'
+        s = evalSide(s, None, QorA, True)
+
+        # Copied straight from original, except more aggressive entity
+        # reference resolution.
+        s = s.replace("<br>", u" ")
+        s = s.replace("<br />", u" ")
+        s = s.replace("\n", u"  ")
+        s = anki.utils.stripHTML(s)
+        s = re.sub("\[sound:[^]]+\]", "", s)
+        s = re.sub("&(?P<entname>[a-zA-Z0-9]+);", entitySubst, s)
+        s = s.strip()
+        # End copy
+
+        return PyQt4.QtCore.QVariant(s)
+
 def init():
         action = PyQt4.QtGui.QAction(ankiqt.mw)
         action.setText("CodeInCards Deck Trust...")
@@ -304,9 +358,12 @@ def init():
         anki.hooks.addHook("drawAnswer", evalAnswer)
         anki.hooks.addHook("drawQuestion", evalQuestion)
         anki.hooks.addHook("enableDeckMenuItems", enableDeckMenuItems)
+        
+        ankiqt.ui.cardlist.DeckModel.data = anki.hooks.wrap(ankiqt.ui.cardlist.DeckModel.data, cardListData, "wrap")
 
         sys.path.append(getLibraryDir())
         loadLibraries()
+
 
 init()
 
