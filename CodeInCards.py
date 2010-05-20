@@ -147,7 +147,7 @@ def realSubstEval(match):
         expr = re.sub("<br\s*/?>", "\n", expr)
 
         try:
-                return str(eval(expr, copySymtab()))
+                return eval(expr, copySymtab())
         except:
                 return prettyError(expr, traceback.format_exc())
 

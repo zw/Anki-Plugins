@@ -90,8 +90,9 @@ over flexibility:
   $varName
   </div>
     <p style="margin-left:6em; max-width:35em; ">
-    Interpolate variable "varName".  Subscripting and dot-whatever
-    isn't supported (yet!); use the bracketed format below instead.
+    Interpolate string variable "varName" (it must be a string).  Subscripting
+    and dot-whatever isn't supported; use the bracketed format below instead
+    for that.
     </p>
 
   <div style="color:blue; margin-left:3em; font-family:Courier,monospace">
@@ -99,7 +100,8 @@ over flexibility:
   </div>
     <p style="margin-left:6em; max-width:35em; ">
     Invoke <span class="code">functionName</span>
-    with the supplied args, and interpolate the returned string, e.g.:
+    with the supplied args, and interpolate the returned string (it must be a
+    string), e.g.:
     </p>
       <div style="margin-left:9em; font-family:Courier,monospace">
       $myFunc(myVar, 'a string arg')
@@ -152,10 +154,10 @@ multiple lines and brackets are allowed; the only banned string is
   </div>
     <p style="margin-left:6em; max-width:35em; ">
     Evaluates &lt;expression&gt; (a single expression) and substitutes
-    result.  For example:
+    the resulting string (it must be a string).  For example:
     </p>
       <div style="margin-left:9em; font-family:Courier,monospace">
-      {%= 6 * 9 %}
+      {%= str(6 * 9) %}
       </div>
     <p style="margin-left:6em; max-width:35em; ">
     will yield "54" in the card or template (or "42" if you're a Hitchiker's Guide fan).  Function
