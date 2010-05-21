@@ -1,4 +1,4 @@
-Loads substition "libraries" of Python functions and variables from <span style="font-family:Courier,monospace">%pluginsFolder%/CodeInCards/*.py</span> then provides syntax to let you substitute the results of library calls (or indeed any other arbitrary Python code) into cards and/or card templates.
+Loads substitution "libraries" of Python functions and variables from <span style="font-family:Courier,monospace">%pluginsFolder%/CodeInCards/*.py</span> then provides syntax to let you substitute the results of library calls (or indeed any other arbitrary Python code) into cards and/or card templates.
 
 Full documentation is at <a href="http://bit.ly/codeincardsdoc">http://bit.ly/codeincardsdoc</a>.
 
