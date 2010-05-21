@@ -140,6 +140,8 @@ def realSubstExec(match):
                 ret = prettyError(code, traceback.format_exc())
         finally:
                 sys.stdout = oldstdout
+        if not (type(ret) == str or type(ret) == unicode):
+                return u"Error: subst returned something other than a string"
         return ret
 
 def realSubstEval(match):
