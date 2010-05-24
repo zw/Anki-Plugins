@@ -126,6 +126,8 @@ class StringWriter:
 
 def realSubstExec(match):
         code = match.group('code')
+        if isSummary:
+                return code
         code = re.sub("<br\s*/?>", "\n", code)
         
         swriter = StringWriter()
@@ -146,6 +148,8 @@ def realSubstExec(match):
 
 def realSubstEval(match):
         expr = match.group('expr')
+        if isSummary:
+                return expr
         expr = re.sub("<br\s*/?>", "\n", expr)
 
         try:
