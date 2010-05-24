@@ -1,0 +1,11 @@
+﻿v24, 2010-05-24:
+
+ * Work around Issue 12 (http://github.com/zw/Anki-Plugins/issues/issue/12)
+   - evaluating escapes for browser summaries seemed to cause crashes.
+   Cardlist will just have to look ugly again (i.e. show unexecuted code) for
+   a while until I sort this.
+
+v23, 2010-05-21:
+
+ * Fix Issue 10 (http://github.com/zw/Anki-Plugins/issues/issue/10) - half-typed
+   escapes in browser would cause exceptions as you typed.

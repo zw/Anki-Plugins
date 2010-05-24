@@ -3,3 +3,16 @@ Loads substitution "libraries" of Python functions and variables from <span styl
 Full documentation is at <a href="http://bit.ly/codeincardsdoc">http://bit.ly/codeincardsdoc</a>.
 
 <span style="color:red; font-size:larger;">Warning: This plugin is a potential security hole.  Please read the documentation before deciding whether to install the plugin.</span>
+
+<span style="font-weight:bold; ">Changelog</span>
+
+v24, 2010-05-24:
+
+ * Work around <a href="http://github.com/zw/Anki-Plugins/issues/issue/12">Issue 12</a> - evaluating escapes for browser summaries seemed to cause crashes.
+   Cardlist will just have to look ugly again (i.e. show unexecuted code) for a while until I sort this.
+
+v23, 2010-05-21:
+
+ * Fix <a href="http://github.com/zw/Anki-Plugins/issues/issue/10">Issue 10</a> - half-typed escapes in browser would cause exceptions as you
+   typed.
+
