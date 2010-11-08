@@ -47,8 +47,18 @@ def a(text):
 
 def ifnem(text, fmt):
         if text != "":
-                return fmt % text
+                try:
+                        return fmt % text
+                except TypeError:
+                        # No %s in fmt
+                        return fmt
         return ""
+
+def ifem(text, ifEmpty, ifNonEmpty=""):
+        if text == "":
+                return ifEmpty
+        else:
+                return ifNonEmpty
 
 def ifa(text):
         if CIC.QorA == "a":
@@ -60,8 +70,8 @@ def ifq(text):
                 return text
         return ""
 
-def pick(text):
-        return random.choice(text.split(","))
+def pick(text, sep=","):
+        return random.choice(text.split(sep))
 
 def sayHello():
         return HELLO

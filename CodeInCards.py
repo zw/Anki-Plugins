@@ -1,4 +1,4 @@
-'''
+u'''
 CodeInCards - an Anki plugin to embed Python code in cards/card templates
 
 Copyright 2010 Isaac Wilcox.  This program is free software: you can
@@ -16,7 +16,7 @@ An example library can be found in CodeInCards/default.py or at:
 
 '''
 
-securityWarning = """\
+securityWarning = u"""\
 A trusted deck is inherently a potential security hole.  If someone/something \
 deliberately or accidentally causes you to run CodeInCard escapes you didn't \
 write, or even if you just write buggy escapes, it could lead to you losing \
@@ -35,6 +35,7 @@ import textwrap
 import htmlentitydefs
 
 import anki
+import anki.deck
 import ankiqt
 import ankiqt.ui.utils
 
@@ -42,13 +43,18 @@ import PyQt4.QtCore
 import PyQt4.QtGui
 import PyQt4.Qt
 
-IGNORED_ESCAPES_WARNING = """\
+IGNORED_ESCAPES_WARNING = u"""\
 <span style='color:red; font-style:italic; '>
 CodeInCards escapes were found but ignored because this deck is not trusted.
 Use menu option 'Tools-&gt;Advanced-&gt;CodeInCards Deck Trust...'
-to change this.</span><br />"""
+to change this.</span><br />\
+"""
 
-CONFIG_KEY = 'CodeInCards.trustedDecks'
+CONFIG_KEY = u'CodeInCards.trustedDecks'
+
+debug = True
+LOG_FILENAME = u'/tmp/CodeInCards.out'
+logger = None
 
 modulesMap = {}
 libsSymtab = {}
@@ -59,15 +65,24 @@ card = None
 substExec = None
 substEval = None
 showTrustMessage = None
+f = None
+depth = 0
 
 def evalQuestion(html, card):
-        return evalSide(html, card, "q", False)
+        logger.debug(u"html's type is " + str(type(html)))
+        return evalSide(html, card, u"q", False)
 
 def evalAnswer(html, card):
-        return evalSide(html, card, "a", False)
+        return evalSide(html, card, u"a", False)
 
 def evalSide(html, _card, _QorA, _isSummary):
-        global showHTML, QorA, card, isSummary, showTrustMessage
+        global showHTML, QorA, card, isSummary, showTrustMessage, depth
+        if depth:
+                saved_showHTML = showHTML
+                saved_QorA = QorA
+                saved_card = card
+                saved_isSummary = isSummary
+                depth += 1
         showHTML = False
         QorA = _QorA
         card = _card
@@ -76,7 +91,10 @@ def evalSide(html, _card, _QorA, _isSummary):
 
         # The {%= ... %} takes precedence by being subbed first.
         # Don't want to make it a parameter.
-        html = re.sub("""(?xms)        # multiline mostly in case field substs are!
+        logger.debug("to execute:\n" + html)
+        html = re.sub(ur"dnl.*<br\s*/?>", ur"", html)
+        html = re.sub(ur"dnl.*\n", ur"", html)
+        html = re.sub(ur"""(?xms)        # multiline mostly in case field substs are!
                          \{\%=         # opening tag
                          \s*           # eat leading whitespace
                          (?P<expr>.+?) # any old content, non-greedy
@@ -84,7 +102,7 @@ def evalSide(html, _card, _QorA, _isSummary):
                                        # will work on a single line
                          \%\}          # closing tag
                          """, substEval, html)
-        html = re.sub("""(?xms)        # multiline because code block might be
+        html = re.sub(ur"""(?xms)        # multiline because code block might be
                          \{\%          # opening tag
                          \s*           # eat leading whitespace
                          (?P<code>.+?) # any old content; non-greedy
@@ -92,7 +110,7 @@ def evalSide(html, _card, _QorA, _isSummary):
                                        # will work on a single line
                          \%\}          # closing tag
                          """, substExec, html)
-        html = re.sub("""(?xms)
+        html = re.sub(ur"""(?xms)
                          (?<!\$)       # $$... isn't substituted
                          \$            # leading dollar
                          (?P<expr>     # start capture
@@ -102,150 +120,201 @@ def evalSide(html, _card, _QorA, _isSummary):
                                \(            # start args list
                                [^)]*         # greedily include all non-brackets
                                \)            # end args list
+                               |
+                               \[            # start subscription
+                               [^]]*         # greedily include all non-brackets
+                               \]            # end subscription
                             )?            # end group optional args list
                          )             # finish capture
                          (?(args)|!?)  # eat an optional pling if no args
                          """, substEval, html)
-        html = re.sub('\$\$', '$', html)
+        html = re.sub(ur'\$\$', ur'$', html)
 
         if not isSummary:
                 if showHTML:
-                        html = re.sub("<", "&lt;", html)
-                        html = re.sub(">", "&gt;", html)
-                        html = "<span style='white-space:pre; font-family:monospace;'>" + html + "</span>"
+                        html = re.sub(ur"<", ur"&lt;", html)
+                        html = re.sub(ur">", ur"&gt;", html)
+                        html = u"<span style='white-space:pre; font-family:monospace;'>" + html + u"</span>"
                 if showTrustMessage:
                         html += IGNORED_ESCAPES_WARNING
 
+        logger.debug("result:\n" + html)
+        if depth:
+                showHTML = saved_showHTML
+                QorA = saved_QorA
+                card = saved_card
+                isSummary = saved_isSummary
+                depth -= 1
         return html
 
 class StringWriter:
         # Impersonates sys.stdout, accumulating the write()n strings
-        s = ""
+        s = u""
         def write(self, str):
                 self.s += str
 
 def realSubstExec(match):
-        code = match.group('code')
-        if isSummary:
-                return code
-        code = re.sub("<br\s*/?>", "\n", code)
+        code = match.group(u'code')
+        #if isSummary:
+        #        return code
+        code = re.sub(ur"<br\s*/?>", ur"\n", code)
         
         swriter = StringWriter()
         oldstdout = sys.stdout
         sys.stdout = swriter
 
-        ret = ""
+        ret = u""
         try:
+                logger.debug(u"code's type is " + str(type(code)))
                 exec code in copySymtab()
                 ret = swriter.s
         except:
                 ret = prettyError(code, traceback.format_exc())
         finally:
                 sys.stdout = oldstdout
-        if not (type(ret) == str or type(ret) == unicode):
-                return u"Error: subst returned something other than a string"
         return ret
 
 def realSubstEval(match):
-        expr = match.group('expr')
-        if isSummary:
-                return expr
-        expr = re.sub("<br\s*/?>", "\n", expr)
+        expr = match.group(u'expr')
+        #if isSummary:
+        #        return expr
+        expr = re.sub(ur"<br\s*/?>", ur"\n", expr)
 
+        ret = u""
         try:
-                return eval(expr, copySymtab())
+                logger.debug(u"expr's type is " + str(type(expr)))
+                ret = eval(expr, copySymtab())
         except:
-                return prettyError(expr, traceback.format_exc())
+                ret = prettyError(expr, traceback.format_exc())
+        if not (type(ret) == str or type(ret) == unicode):
+                return u"Error: CodeInCards expression escape returned something other than a string"
+        return ret
+
+class FieldGetter:
+        u"""
+        Just a hack for getting a field to be accessible via f[name] instead of
+        f(name), to work around the nested brackets that don't work in
+        $doSomethingWithF(f('foo')).
+        I'd prefer to declare __getitem__ class or static and say:
+          f=FieldGetter
+          f['field']
+        but that yields:
+          TypeError: 'classobj' object is unsubscriptable
+        so we instantiate this in init() instead.
+        """
+        def __getitem__(self, name):
+                u"""Convenience method to pull out field by name, evaluate any escapes
+                    and return the result."""
+                # Just for clarity, we're using the card set up by evalSide
+                global card
+                ret = u""
+                try:
+                        ret = card.fact[name]
+                except KeyError:
+                        return "No such field '%s'" % name
+                return evalSide(ret, card, QorA, isSummary)
 
 def copySymtab():
-        "Clone the pooled symtab and insert some convenience symbols"
+        u"Clone the pooled symtab and insert some convenience symbols"
         tempSymtab = libsSymtab.copy()
-        tempSymtab.update({'QorA': QorA, 'card': card, 'isSummary': isSummary})
+        tempSymtab.update({u'QorA': QorA, u'card': card, u'isSummary': isSummary, u'f': f})
         return tempSymtab
 
 def prettyError(code, trace):
         shortSymtab = libsSymtab.copy()
-        shortSymtab['__builtins__'] = None
+        shortSymtab[u'__builtins__'] = None
         shortPrettySymtab = str(shortSymtab)
-        shortPrettySymtab = re.sub("<", "&lt;", shortPrettySymtab)
-        shortPrettySymtab = re.sub(">", "&gt;", shortPrettySymtab)
-        prettyTrace = trace[:]
-        prettyTrace = re.sub("<", "&lt;", prettyTrace)
-        prettyTrace = re.sub(">", "&gt;", prettyTrace)
-        prettyTrace = re.sub("\n", "<br />", prettyTrace)
+        shortPrettySymtab = re.sub(ur"<", ur"&lt;", shortPrettySymtab)
+        shortPrettySymtab = re.sub(ur">", ur"&gt;", shortPrettySymtab)
+
+        # Python includes 'code' in the traceback str, resulting in a string
+        # object (whose encoding is always implicitly 'ascii') even when 'code'
+        # contains non-ASCII.  This is probably a Python bug. 
+        try:
+                prettyTrace = trace.decode(u'utf-8')
+        except UnicodeDecodeError:
+                prettyTrace = u""
+                prettyTraceChars = list(trace)
+                for c in prettyTraceChars:
+                        if ord(c) > 127:
+                                prettyTrace += u'0x%x' % ord(c)
+                        else:
+                                prettyTrace += c
+        prettyTrace = re.sub(ur"<", ur"&lt;", prettyTrace)
+        prettyTrace = re.sub(ur">", ur"&gt;", prettyTrace)
+        prettyTrace = re.sub(ur"\n", ur"<br />", prettyTrace)
         
-        ret = """\
-               <div style='color:red; font-family:monospace; white-space:pre'>
+        ret = u"""\
+               <div style='color:red; font-family:monospace; white-space:pre; text-align:left; '>
                Error evaluating code substitution:<br />%s
-               libs symtab is:<br />%s<br />
                '''code''' is:<br />'''%s'''
-               </div>"""  % (prettyTrace, shortPrettySymtab, code)
+               </div>"""  % (prettyTrace, code)
         return textwrap.dedent(ret)
         
 def getLibraryDir():
         # For testing:
         # p = "/Users/zak/Library/Application Support/Anki/plugins/CodeInCards"
-        p = os.path.join(ankiqt.mw.pluginsFolder(), "CodeInCards")
+        p = os.path.join(ankiqt.mw.pluginsFolder(), u"CodeInCards")
         if not os.path.exists(p):
                 os.mkdir(p)
         return p
 
 def getLibraries():
-        return [p for p in os.listdir(getLibraryDir()) if p.endswith(".py")]
+        return [p for p in os.listdir(getLibraryDir()) if p.endswith(u".py")]
 
 def buildSymtab(modules):
-        "Build a pooled symtab with symbols from all substitution libraries, plus 'CIC' alias for this module"
+        u"Build a pooled symtab with symbols from all substitution libraries, plus 'CIC' alias for this module"
         global libsSymtab
         libsSymtab = {}
         for m in modules:
                 libsSymtab.update(dict([(symbol, getattr(m, symbol)) for symbol in dir(m)]))
-        libsSymtab.update({'CIC': sys.modules[__name__]})
+        libsSymtab.update({u'CIC': sys.modules[__name__]})
 
 def loadLibraries():
-        "Import or reload all modules found in %pluginsDir%/CodeInCards/*.py and build a pooled symtab"
+        u"Import or reload all modules found in %pluginsDir%/CodeInCards/*.py and build a pooled symtab"
         global modulesMap
         libraries = getLibraries()
 
         # Out with modules that have disappeared, if any.
         for nopy in modulesMap.keys():
-                if (nopy + ".py") not in libraries:
+                if (nopy + u".py") not in libraries:
                         del modulesMap[nopy]
         # Load or reload each lib with a .py
         for lib in libraries:
-                nopy = lib.replace(".py", "")
+                nopy = lib.replace(u".py", u"")
                 try:
                         if nopy not in modulesMap:
                                 modulesMap[nopy] = __import__(nopy)
                         else:
                                 reload(modulesMap[nopy])
                 except:
-                        print >>sys.stderr, "Error in %s" % lib
+                        print >>sys.stderr, u"Error in %s" % lib
                         traceback.print_exc()
         buildSymtab(modulesMap.values())
 
 def onReloadLibraries():
         try:
                 loadLibraries()
-                ankiqt.ui.utils.showInfo("Libraries reloaded.")
+                ankiqt.ui.utils.showInfo(u"Libraries reloaded.")
         except Exception as e:
                 raise e
 
 def safeSubst(match):
-        "Leave code escape untouched, and flag the need to show 'deck not trusted' message"
+        u"Leave code escape untouched, and flag the need to show 'deck not trusted' message"
         global showTrustMessage
         showTrustMessage = True
         return match.group()
 
 def onConfigureTrust():
-        "Handle selection of Tools->Advanced->CodeInCards Deck Trust"
+        u"Handle selection of Tools->Advanced->CodeInCards Deck Trust"
         trustedDecksDialog = PyQt4.QtGui.QDialog(ankiqt.mw)
-        trustedDecksDialog.setWindowTitle("Configure CodeInCards Deck Trust")
+        trustedDecksDialog.setWindowTitle(u"Configure CodeInCards Deck Trust")
         l = PyQt4.QtGui.QVBoxLayout()
 
         # Ugly hack to set a sensible minimum width without using absolute
         # sizes in pixels.  Does QT have a way to set width in 'em'?
         widthLabel = PyQt4.QtGui.QLabel()
-        widthLabel.setText("------------------------------------------------------")
+        widthLabel.setText(u"------------------------------------------------------")
         widthLabel.setMaximumHeight(1)
         widthLabel.setWordWrap(False)
         l.addWidget(widthLabel)
@@ -253,21 +322,21 @@ def onConfigureTrust():
         warningLabel = PyQt4.QtGui.QLabel()
         warningLabel.setText(securityWarning)
         warningLabel.setWordWrap(True)
-        warningLabel.setStyleSheet("QLabel { color:red; }")
+        warningLabel.setStyleSheet(u"QLabel { color:red; }")
         l.addWidget(warningLabel)
 
         checkBox = PyQt4.QtGui.QCheckBox()
-        checkBox.setText("Execute CodeInCards escapes in this deck")
+        checkBox.setText(u"Execute CodeInCards escapes in this deck")
         if deckIsTrusted(ankiqt.mw.deck, ankiqt.mw.config):
                 checkBox.setChecked(True)
         l.addWidget(checkBox)
 
-        trustedDecksDialog.connect(checkBox, PyQt4.QtCore.SIGNAL("stateChanged(int)"), onCheckBox)
+        trustedDecksDialog.connect(checkBox, PyQt4.QtCore.SIGNAL(u"stateChanged(int)"), onCheckBox)
         trustedDecksDialog.setLayout(l)
         trustedDecksDialog.show()
 
 def onCheckBox(newState):
-        "Update config and execution behaviour to match trust dialog checkbox"
+        u"Update config and execution behaviour to match trust dialog checkbox"
         setDeckTrust(newState == PyQt4.QtCore.Qt.Checked, ankiqt.mw.deck, ankiqt.mw.config)
         applyDeckTrust(ankiqt.mw.deck, ankiqt.mw.config)
 
@@ -280,7 +349,7 @@ def setDeckTrust(trust, deck, config):
                 config[CONFIG_KEY] = {} 
 
         if trust:
-                config[CONFIG_KEY][deckHash(deck)] = ""
+                config[CONFIG_KEY][deckHash(deck)] = u""
         else:
                 del config[CONFIG_KEY][deckHash(deck)]
 
@@ -289,7 +358,7 @@ def deckHash(deck):
 
 # Anki hook
 def enableDeckMenuItems(enabled):
-        "Update execution behaviour each time we load a new deck"
+        u"Update execution behaviour each time we load a new deck"
         if enabled:
                 applyDeckTrust(ankiqt.mw.deck, ankiqt.mw.config)
 
@@ -303,14 +372,14 @@ def applyDeckTrust(deck, config):
                 substEval = safeSubst
 
 def entitySubst(match):
-        ''' Replace &entityname; with corresponding entity '''
-        if match.group('entname') in htmlentitydefs.name2codepoint:
-                return unichr(htmlentitydefs.name2codepoint[match.group('entname')])
+        u''' Replace &entityname; with corresponding entity '''
+        if match.group(u'entname') in htmlentitydefs.name2codepoint:
+                return unichr(htmlentitydefs.name2codepoint[match.group(u'entname')])
         # Pass through bad names unchanged
         return match.group()
 
 def cardListData(self, index, role, _old=None):
-        '''
+        u'''
         A clone of anki.ui.cardlist.DeckModel.data() - i.e. the card list
         table cell renderer.
         This is a hack and should be patched in Anki to be hookable instead.
@@ -322,7 +391,7 @@ def cardListData(self, index, role, _old=None):
                 return PyQt4.QtCore.QVariant()
         if role == PyQt4.QtCore.Qt.FontRole:
                 f = PyQt4.QtGui.QFont()
-                f.setPixelSize(self.parent.config['editFontSize'])
+                f.setPixelSize(self.parent.config[u'editFontSize'])
                 return PyQt4.QtCore.QVariant(f)
         if role == PyQt4.QtCore.Qt.TextAlignmentRole and index.column() == 2:
                 return PyQt4.QtCore.QVariant(PyQt4.QtCore.Qt.AlignHCenter)
@@ -333,47 +402,90 @@ def cardListData(self, index, role, _old=None):
                 s = self.columns[index.column()][1](index)
 
                 if index.column() == 0:
-                        QorA = 'q'
-                        s = evalSide(s, None, QorA, True)
+                        QorA = u'q'
                 elif index.column() == 1:
-                        QorA = 'a'
-                        s = evalSide(s, None, QorA, True)
+                        QorA = u'a'
 
-                s = re.sub("<li>", u" &bull; ", s)
+                if index.column() < 2:
+                        card = self.getCard(index)
+                        s = evalSide(s, card, QorA, True)
+                        s = anki.hooks.runFilter(u"drawSummary", s, card)
+
+                s = re.sub(ur"<li>", ur" &bull; ", s)
                 # More aggressive entity reference resolution.
-                s = re.sub("&(?P<entname>[a-zA-Z0-9]+);", entitySubst, s)
+                s = re.sub(ur"&(?P<entname>[a-zA-Z0-9]+);", entitySubst, s)
 
-                s = s.replace("<br>", u" ")
-                s = s.replace("<br />", u" ")
-                s = s.replace("\n", u"  ")
+                s = s.replace(u"<br>", u" ")
+                s = s.replace(u"<br />", u" ")
+                s = s.replace(u"\n", u"  ")
                 s = anki.utils.stripHTML(s)
-                s = re.sub("\[sound:[^]]+\]", "", s)
-                s = s.replace("&amp;", "&")
+                s = re.sub(ur"\[sound:[^]]+\]", ur"", s)
+                s = s.replace(u"&amp;", u"&")
                 s = s.strip()
                 return PyQt4.QtCore.QVariant(s)
         else:
                 return PyQt4.QtCore.QVariant()
 
+
+def configureLogging(debug):
+        global logger
+        if not debug:
+                class LoggerStub:
+                        def debug(self, s): pass
+                logger = LoggerStub()
+                return
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.addHandler(logging.FileHandler(LOG_FILENAME, delay=True))
+        logger.setLevel(logging.DEBUG)
+
 def init():
+        global f
+        f = FieldGetter()
+        configureLogging(debug)
         action = PyQt4.QtGui.QAction(ankiqt.mw)
-        action.setText("CodeInCards Deck Trust...")
-        ankiqt.mw.connect(action, PyQt4.QtCore.SIGNAL("triggered()"), onConfigureTrust)
+        action.setText(u"CodeInCards Deck Trust...")
+        ankiqt.mw.connect(action, PyQt4.QtCore.SIGNAL(u"triggered()"), onConfigureTrust)
         ankiqt.mw.mainWin.menuAdvanced.addAction(action)
 
         action = PyQt4.QtGui.QAction(ankiqt.mw)
-        action.setText("Reload CodeInCards libraries")
-        ankiqt.mw.connect(action, PyQt4.QtCore.SIGNAL("triggered()"), onReloadLibraries)
+        action.setText(u"Reload CodeInCards libraries")
+        ankiqt.mw.connect(action, PyQt4.QtCore.SIGNAL(u"triggered()"), onReloadLibraries)
         ankiqt.mw.mainWin.menuAdvanced.addAction(action)
 
-        anki.hooks.addHook("drawAnswer", evalAnswer)
-        anki.hooks.addHook("drawQuestion", evalQuestion)
-        anki.hooks.addHook("enableDeckMenuItems", enableDeckMenuItems)
+        # FIXME: loading after SynSugar plugin causes problems.  Ideally we'd
+        # do something like this:
+        #   anki.hooks.addHook(u"allPluginsLoaded", prependOurHooks)
+        #   def prependOurHooks():
+        #           anki.hooks.prependHook(u"drawAnswer", evalAnswer)
+        #           anki.hooks.prependHook(u"drawQuestion", evalQuestion)
+        # It's a bit arrogant to assume you have the right to be the first
+        # hook, but code is rather sensitive to modifications.
+        # In the meantime, hack it by modifying anki.hooks internals.
+        if 'SynSugar' in sys.modules:
+                anki.hooks._hooks['drawAnswer'].insert(0, evalAnswer)
+                anki.hooks._hooks['drawQuestion'].insert(0, evalQuestion)
+        else:
+                anki.hooks.addHook(u"drawAnswer", evalAnswer)
+                anki.hooks.addHook(u"drawQuestion", evalQuestion)
+        anki.hooks.addHook(u"enableDeckMenuItems", enableDeckMenuItems)
         
-        ankiqt.ui.cardlist.DeckModel.data = anki.hooks.wrap(ankiqt.ui.cardlist.DeckModel.data, cardListData, "wrap")
+        ankiqt.ui.cardlist.DeckModel.data = anki.hooks.wrap(ankiqt.ui.cardlist.DeckModel.data, cardListData, u"wrap")
+
+        # Anki cleverly checks whether there's any point rendering a card,
+        # deciding that if no %(foo)s substitutions get made then the card
+        # is empty.  Because we use $f['blah'] we'll hack it for now.
+        def availableCardModels(self, fact, checkActive=True):
+                models = []
+                for cardModel in fact.model.cardModels:
+                        if cardModel.active or not checkActive:
+                                models.append(cardModel)
+                return models
+        anki.deck.Deck.availableCardModels = availableCardModels
+
 
         sys.path.append(getLibraryDir())
         loadLibraries()
-
 
 init()
 

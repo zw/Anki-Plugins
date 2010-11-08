@@ -10,6 +10,73 @@
 
 <h2>Description</h2>
 
+
+<!--
+Restore "caveats" so you can mention the fact that it'll break if used in
+individual fields (not restricted to templates) and with
+AnkiOnline/AnkiMini/AnkiSRS iPhone/AnkiDroid/AnkiAnythingButDesktop.  This is
+really only a plugin for the desktop.
+
+Also breaks search in these circumstances - although it's hard to imagine what
+content you'd move completely into a library.
+
+Mention these caveats earlier.
+
+Not a chance in hell of iPhone support, even if kludged for the 'droid.
+Not a chance of AnkiOnline support.
+
+This poses us a problem.  I want scripting and I want AnkiDroid.  Android has
+ASE for running Python and many other scripting languages but you can't embed
+it, and running ASE concurrently will be slow and complicated (to do the IPC).
+So having burned boats by putting execution-dependent content (both Python and
+Markdown) into individual cards, what do I do?
+
+One option is to make Markdown the creation format but settle for HTML as the
+storage format - convert into HTML as early as possible and edit that HTML if
+necessary later on.  If so, move execution into formatQA and be done with it?
+
+You can edit cards in AnkiDroid - relevant because Pythonated templates
+will fail when it runs the equivalent of formatQA.
+
+Cases where the card dynamically changes are fairly rare and I could surely
+live without them with an exported deck.
+
+Another option is to shadow each field with a Pythonated one.  Nah, too many
+fields.
+
+Another option is to use a scripting language that's so tiny it can be
+embedded in both Python and non-Python implementations of Anki - namely Lua.
+Kahlua will do it for Java.  Catch: I don't see a Python impl!  Also bloats
+AnkiDroid somewhat.  Also AnkiDroid doesn't have a plugins mechanism so you'd
+limit your usership somewhat if people had to use yours.
+
+QUEESY - quick and easy execution/editing system.  Bundle all three plugins
+in one big thing.
+
+Summary of options for CodeInCards:
+* Change to Lua; embed Kahlua in AnkiDroid and in the desktop Anki use PyLux or
+  its ilk or even write a pure Python Lua.
+* Export/upload only pure HTML; which means, effectively, at-entry evaluation
+  (though you could hold off until a save or sync) - which in turn means
+  sacrificing per-rendering dynamicness.
+* Squirrel away the Pythonated version of each field in a comment, or serialise
+  it into some unused field in a robust format, and allow its edit only in
+  clients that support it.  This would require that other clients preserve it,
+  and if used in a client that supports editing we'd have to timestamp the
+  code so we knew there was a conflict between rendered and source versions.
+  Or perhaps do a cheap checksum of the rendered version and check that, seeing
+  as cards can be modified in ways that don't change the rendering.
+
+Options are almost identical for SynSugar:
+* Include a Markdown implementation in AnkiDroid.  Not looked at this.
+* Export/upload only pure HTML, making Markdown a format for writing but not
+  editing.  There never was any per-rendering dynamicness in SynSugar.
+* Squirrel away MD version of card - as CIC above.
+
+-->
+
+
+
 <p>
 This <a href="http://ichi2.net/anki/">Anki</a> plugin loads substition
 "libraries" of <a href="http://www.python.org/">Python</a> functions and variables from
@@ -215,27 +282,40 @@ When you save this in the card template editor:
   </div>
 <p>
 &hellip;Anki regenerates the HTML for all the cards, which expands
-<span class="code">%(fieldName)s</span>
-and wraps it in some formatting code.  By the time the card gets rendered
-for (p)review and CodeInCards escapes get interpreted, CodeInCards will see
-something like this:
+<span class="code">%(fieldName)s</span> and wraps it in some style markup.
+By the time the card gets rendered for (p)review and CodeInCards escapes get
+interpreted, CodeInCards will see something like this:
 </p>
   <div style="margin-left:3em; font-family:Courier,monospace">
   $myFunc('foo &lt;span id="fm109283749"&gt;fieldContents&lt;span&gt; bar')
   </div>
 <p>
 Provided <span class="code">fieldContents</span>
-doesn't contain any brackets itself, this works fine - and is an exception to
-the rule that brackets aren't allowed in <span class="code">$fn()</span>
-escapes - but you must take care to avoid double-quotes for the argument to
-<span class="code">myFunc()</span> to prevent a
-clash with Anki's <span class="code">&lt;span&gt;</span>
-tag attribute.  If your <span class="code">%(string)s</span>
-might contain single quotes then you'll have to use Python's tripled quotes
-around it.  If it might contain closing brackets then you'll have to use
-<span class="code">{%&nbsp;&hellip;&nbsp;%}</span> syntax.  If it might
-contain tripled quotes, that's probably a sign from the Gods.
+doesn't contain any brackets itself, this works fine &mdash; because it happens
+before CodeInCards sees it, it's an exception to the rule that brackets aren't
+allowed in <span class="code">$fn()</span> escapes.  You must take care when
+quoting the argument to <span class="code">myFunc()</span> to prevent a
+clash with Anki's <span class="code">&lt;span&gt;</span> tag attribute.
+Triple quotes are most robust; since it's the template editor, you'll only
+need to type them once.  If your <span class="code">%(string)s</span>
+might contain brackets or extreme quotes then you'll have to use either
+<code>{%&nbsp;&hellip;&nbsp;%}</code> or the following syntax.
 </p>
+
+<p>
+Instead of <code>%(fieldName)s</code> you can use <code>$f['fieldName']</code>
+to access field contents by name (it'll nest in
+<code>$myFunc(f['fieldName'],&nbsp;"bar")</code> too), and the rather longer
+<code>{%=&nbsp;card.fact.fields[0].value&nbsp;%}</code> to access by number.  Bear in
+mind that:
+</p>
+<ul>
+  <li>you'll bypass Anki's field formatting and get the raw field contents</li>
+  <li>you'll become even more dependent on CodeInCards</li>
+  <li>the by-number form won't evaluate escapes inside the field (<code>%(fieldName)s</code> and <code>$f['fieldName']</code> do)</li>
+  <li>when you rename the field, Anki won't rename all your escapes automatically</li>
+</ul>
+<p>Personally, only the last point seems bad to me.</p>
 
 <h2>Execution Environment</h2>
 
@@ -280,21 +360,16 @@ The following symbols are provided by <span class="code">CIC</span>:
 </p>
 <dl style="margin-left:3em;">
   <dt class="code">CIC.showHTML</dt>
-  <dd>If set to <span class="code">True</span> in an escape, show the resulting HTML markup instead of rendering it; this can help when debugging an escape.</dd>
+  <dd>If set to <span class="code">True</span> in an escape, show the resulting HTML markup instead of rendering it; this can help when debugging an escape.  The scope of this escaping is limited to the card side (or, if using <code>f['fieldName']</code>, to the field) containing the escapes.  Note that if other plugins run after CodeInCards (such as SynSugar) then the escaping may affect the changes they make.</dd>
   <dt class="code">CIC.QorA</dt>
   <dd>'q' or 'a', depending on which side of the card is being rendered.  You can also use just <span class="code">QorA</span> in escapes.</dd>
   <dt class="code">CIC.card</dt>
   <dd>The card being rendered; see the <a href="http://github.com/dae/libanki/blob/master/anki/cards.py">Anki source</a> for structure details.  Warning: this may be <span class="code">None</span> when a card summary is rendered in the browser!  You can also use just <span class="code">card</span> in escapes.</dd>
   <dt class="code">CIC.isSummary</dt>
   <dd><span class="code">True</span> if the card side is being rendered in the cards list, <span class="code">False</span> if it's being rendered in a preview or review.</dd>
+  <dt class="code">CIC.f</dt>
+  <dd>As mentioned in <a href="#fieldsubst">Field Substitutions</a> above, this provides <code>dict</code>-like by-name access to fields using <code>f['fieldName']</code>.  Only simple getting is supported.</dd>
 </dl>
-
-<h2>Caveats</h2>
-
-<ul>
-  <li>At the moment there's no way to prevent the escapes appearing in the browser, so cards start to look quite ugly.</li>
-  <li>It's too easy to get carried away and implement your own SRS mini-language packed with syntactic sugar.</li>
-</ul>
 
 <h2>Licence</h2>
 <p>

@@ -16,11 +16,11 @@ $Id$
 import sys
 import re
 from types import *
+
 import logging
-#LOG_FILENAME = '/tmp/TypedTextImporter.out'
-#logging.basicConfig(filename=LOG_FILENAME,level=logging.CRITICAL)
-def nuffink(s): pass
-logging.debug = nuffink
+debug = False
+LOG_FILENAME = '/tmp/TypedTextImporter.out'
+logger = None
 
 TTI_FILE = u"/Users/zak/stuff/medicine/SRS scratchpad.txt"
 IMPORT_KEY=u"Z"
@@ -96,30 +96,30 @@ class TypedTextImporter(anki.importing.Importer):
                 curCard = ForeignCard()
 
                 while True:
-                        logging.debug("here we go (again); state is " + self.curState)
+                        logger.debug("here we go (again); state is " + self.curState)
                         match = re.search("_reinterpret$", self.curState)
                         if match:
-                                logging.debug("it's a reinterpret, so, pre-sub: " + self.curState)
+                                logger.debug("it's a reinterpret, so, pre-sub: " + self.curState)
                                 self.curState = re.sub("_reinterpret", "", self.curState)
-                                logging.debug("post-sub: " + self.curState)
+                                logger.debug("post-sub: " + self.curState)
                         else:
                                 line = self.fh.readline()
-                                logging.debug("pristine line: '''" + line + "'''")
+                                logger.debug("pristine line: '''" + line + "'''")
                                 if line == "":
                                         if self.curState not in ('collecting_globals', 'between_facts'):
                                                 raise ImportFormatError(type="systemError", info="file terminated unexpectedly in state " + self.curState)
                                         break
                                 line = re.sub("#.*$", "", line)
-                                logging.debug("line with comments removed: '''" + line + "'''")
+                                logger.debug("line with comments removed: '''" + line + "'''")
                                 line = line.rstrip()
-                                logging.debug("stripped line: '''" + line + "'''")
+                                logger.debug("stripped line: '''" + line + "'''")
                                 if line == "__END__":
                                         if self.curState not in ('collecting_globals', 'between_facts'):
                                                 raise ImportFormatError(type="systemError", info="file terminated unexpectedly in state " + self.curState)
                                         # return whatever we've gathered so far, but flag so that we don't re-enter the state machine next time we get called
                                         self.iHaveSeenTheEnd = True
                                         break
-                                logging.debug("state is " + self.curState)
+                                logger.debug("state is " + self.curState)
 
                         if self.curState == 'collecting_globals':
                                 if re.search("^\s*$",line):
@@ -131,12 +131,12 @@ class TypedTextImporter(anki.importing.Importer):
                                 match = re.search("^m: (?P<modelname>.+)$", line)
                                 if match:
                                         self.curState = 'between_facts_reinterpret'
-                                        logging.debug("found an m: line; reinterpreting in state " + self.curState)
+                                        logger.debug("found an m: line; reinterpreting in state " + self.curState)
                                         continue
                                 raise ImportFormatError(type="systemError", info="expected m: or st: but got " + line)
 
                         if self.curState == 'between_facts':
-                                logging.debug("between facts handler")
+                                logger.debug("between facts handler")
 
                                 match = re.search("^st: (?P<tags>.*)$", line)
                                 if match:
@@ -144,65 +144,66 @@ class TypedTextImporter(anki.importing.Importer):
                                         continue
                                 match = re.search("^m: (?P<modelname>.+)$", line)
                                 if match:
-                                        logging.debug("found an m: line")
-                                        self.haveModel = False
+                                        logger.debug("found an m: line")
+                                        self.curModel = None
                                         for m in self.deck.models:
-                                                logging.debug("looking for model named '" + match.group('modelname') + "' ok")
+                                                logger.debug("looking for model named '" + match.group('modelname') + "' ok")
                                                 if m.name == match.group('modelname'):
-                                                        self.model = m
-                                                        self.haveModel = True
-                                                        self.numFields = len(m.fieldModels)
-                                                        # Looks like parent class does this mapping crap for us with a sensible default, provided we set numFields
-                                                        #self.mapping = [ fm for fm in m.fieldModels ]
-                                                        #self.mapping.insert(0, None)
-                                                        logging.debug("chose model " + self.model.name + " ok")
+                                                        self.curModel = m
+                                                        logger.debug("chose model " + self.curModel.name + " with " + str(self.numFields) + " fields, ok")
                                                         break
-                                        if not self.haveModel:
+                                        if not self.curModel:
                                                 raise ImportFormatError(type="systemError", info="model " + match.group('modelname') + " doesn't exist; choose from " + self.deck.models.fieldModels)
                                         continue
                                 if line != "":
                                         # special case: go back around and reinterpret same line in different context
-                                        logging.debug("non-empty, reinterpreting...")
+                                        logger.debug("non-empty, reinterpreting...")
                                         self.curState = 'in_fact_reinterpret'
                                 continue
 
                         if self.curState == 'in_fact':
-                                logging.debug("in_fact handler")
+                                logger.debug("in_fact handler")
                                 # Sub-state - are we in a multiline field?
-                                logging.debug("are we in multiline?")
+                                logger.debug("are we in multiline?")
                                 if self.endOfMultilineFieldMarker != "":
-                                        logging.debug("we are in multiline")
-                                        match = re.search("(?P<leading>.*)" + re.escape(self.endOfMultilineFieldMarker) + "$", line)
+                                        logger.debug("we are in multiline")
+                                        match = re.search(re.escape(self.endOfMultilineFieldMarker) + "$", line)
                                         if match:
-                                                logging.debug("ending multiline")
-                                                if self.endOfMultilineFieldMarker == "...":
-                                                        logging.debug("so far, before html-ising, we have gathered: " + "::fieldsep:::\n".join(curCard.fields))
-                                                        yamlRet = yaml.load(curCard.fields[-1])
-                                                        logging.debug("parsed yaml is:")
-                                                        logging.debug(yamlRet)
-                                                        htmlRet = self.html_list(yamlRet)
-                                                        logging.debug("html is:")
-                                                        curCard.fields[-1] = htmlRet
-                                                        #curCard.fields.append(self.html_list(yaml.load(curCard.fields[-1])))
-                                                        logging.debug("after htmlising we have: " + "::fieldsep:::\n".join(curCard.fields))
-                                                else:
-                                                        curCard.fields[-1] += match.group('leading')
+                                                logger.debug("ending multiline")
                                                 self.endOfMultilineFieldMarker = ""
                                         else:
-                                                logging.debug("collecting in multiline")
+                                                logger.debug("still collecting in multiline")
                                                 curCard.fields[-1] += line + self.multilineEOL
                                         continue
-                                logging.debug("not in multiline; perhaps terminating fact?")
+                                logger.debug("not in multiline; perhaps terminating fact?")
                                 if line == ".":
-                                        logging.debug("we are terminating fact")
                                         # Fact terminator
+                                        logger.debug("we are terminating fact")
+                                
+                                        # Not sure why but ForeignCard takes *both* the contents of .tags
+                                        # *and* contents of a special member of .fields and concatenates
+                                        # those to get overall tags.  If you don't give the special field
+                                        # it gets angry.  So, provide an empty one.  Default mapping will
+                                        # expect to find this in the last field.
                                         curCard.tags += self.sharedTags
                                         curCard.fields = [ unicode(nonUTF) for nonUTF in curCard.fields ]
 
-                                        # Pad out any remaining fields with empty strings
+                                        # Pad out any remaining fields with empty strings.
+                                        # Perhaps at a later point we'll support syntax for specifying a field by "^<s>: "
+                                        # where s is some unambiguous prefix of the field name, at which point we'll need
+                                        # to specify our own mappings.
+                                        logger.debug("purely simply collected fields: " + str(curCard.fields))
                                         have = len(curCard.fields)
-                                        want = len(self.model.fieldModels)
+                                        want = len(self.curModel.fieldModels)
+                                        logger.debug("numFields: %d, have: %d, want: %d" % (self.numFields, have, want))
                                         curCard.fields[have:want] = [ u"" for i in range(have,want) ]
+
+                                        # special tags field
+                                        curCard.fields.append(u"")
+                                        logger.debug("full set of fields with trailing null strings and empty tags: " + str(curCard.fields))
+                                        self.numFields = len(curCard.fields)
+                                        # Setting model computes mapping.
+                                        self.model = self.curModel
 
                                         self.cards.append(curCard)
                                         self.curState = 'between_facts'
@@ -213,64 +214,56 @@ class TypedTextImporter(anki.importing.Importer):
                                         # Stop here and return what we have.
                                         break
                                 else:
-                                        logging.debug("not terminating fact; perhaps starting multiline?")
+                                        logger.debug("not terminating fact; perhaps starting multiline?")
                                         # Single-line field, or start of a multiline one.
                                 
-                                        # `this is a
-                                        # multiline string`
+                                        # `
+                                        # this is a
+                                        # multiline string
+                                        # `
                                         # =>
-                                        # this is a<br />multiline string
-                                        match = re.search("^(?P<eof>`)(?P<trailing>.*)", line)
+                                        # this is a\nmultiline string
+                                        match = re.search("^(?P<eof>`)(?P<flags>[b]?)$", line)
                                         if match:
-                                                logging.debug("starting `multiline")
+                                                logger.debug("starting `multiline")
                                                 self.endOfMultilineFieldMarker = match.group('eof')
-                                                self.multilineEOL = "<br />"
-                                                # Start off with new field (starting with any trailing text), added to as we collect constituent lines
-                                                curCard.fields.append(match.group('trailing') + self.multilineEOL)
+                                                # FIXME: Anki seems to fuck with this if not set to <br/>
+                                                #if match.group('flags') == "b":
+                                                self.multilineEOL = "<br/>"
+                                                #else:
+                                                #self.multilineEOL = "\n"
+                                                # Start off with new empty field, added to as we collect constituent lines
+                                                curCard.fields.append("")
                                                 continue
                                         # <<Eof
                                         # so
-                                        # is thisEof
+                                        # is this
+                                        # Eof
                                         # =>
                                         # so\nis this
                                         match = re.search("^<<(?P<eof>\S+)$", line)
                                         if match:
-                                                logging.debug("starting <<multiline")
+                                                logger.debug("starting <<multiline")
                                                 self.endOfMultilineFieldMarker = match.group('eof')
                                                 self.multilineEOL = "\n"
-                                                # Start off with new blank field, added to as we collect constituent lines
-                                                curCard.fields.append('')
-                                                continue
-                                        # ---
-                                        # - these
-                                        # - are items
-                                        # - - in a list
-                                        #   - sublist
-                                        # - yaml love
-                                        # ...
-                                        match = re.search("^(?P<eof>---)$", line)
-                                        if match:
-                                                logging.debug("starting ---yaml")
-                                                self.endOfMultilineFieldMarker = '...'
-                                                self.multilineEOL = "\n"  # this'll get converted when we HTMLise the list
                                                 # Start off with new blank field, added to as we collect constituent lines
                                                 curCard.fields.append('')
                                                 continue
 
                                         match = re.search("^t:(?P<facttags> .*)$", line)
                                         if match:
-                                                logging.debug("adding per-fact tags")
+                                                logger.debug("adding per-fact tags")
                                                 curCard.tags += match.group('facttags')
                                                 continue
 
                                         # Single-line.
-                                        logging.debug("collecting single line")
+                                        logger.debug("collecting single line")
                                         curCard.fields.append(line)
                                         continue
                                 continue
                         raise ImportFormatError(type="systemError", info="ended up in unhandled state")
-                logging.debug("stick a fork in me: ")
-                logging.debug(self.cards)
+                logger.debug("stick a fork in me: ")
+                logger.debug(self.cards)
                 return self.cards
 
         def fields(self):
@@ -295,6 +288,19 @@ def newKeyPressEvent(evt):
                 evt.accept()
         return oldEventHandler(evt)
 
+def configureLogging(debug):
+        global logger
+        if not debug:
+                class LoggerStub:
+                        def debug(self, s): pass
+                logger = LoggerStub()
+                return
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.addHandler(logging.FileHandler(LOG_FILENAME, delay=True))
+        logger.setLevel(logging.DEBUG)
+
+configureLogging(debug)
 
 # Would be much better if we could use a hook to modify this, and slightly
 # better if it was at least a list rather than a tuple:

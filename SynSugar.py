@@ -42,7 +42,7 @@ def ent_subst(match):
 def reallySplit(tags):
         splitTags = []
         for t in tags.split():
-                logger.debug(u"tag is " + str(type(t)) + str(t))
+                logger.debug(u"tag is " + unicode(type(t)) + unicode(t))
                 splitTags.append(t)
         return splitTags
 
@@ -56,17 +56,17 @@ def processSide(html, card):
         html = re.sub(ur"(?<=[ >(])=(&gt;|>)(?=[ <])", ur"&rArr;", html)
         # Smartypants ideas ( http://daringfireball.net/projects/smartypants/ )
         html = re.sub(ur"\.\.\.", ur"&hellip;", html)
-        # Quotes around "stuff that's, well, texty", except after an '=' where they're
+        # Quotes around "stuff that's, well, texty?", except after an '=' where they're
         # probably HTML attributes.
-        html = re.sub(ur'(?<!=)"([a-zA-Z\', ]+)"', ur"&ldquo;\g<1>&rdquo;", html)
+        html = re.sub(ur'(?<!=)"([a-zA-Z\', ?]+)"', ur"&ldquo;\g<1>&rdquo;", html)
         # Dashes only if not preceded or followed by dashes.
         html = re.sub(ur'(?<!-)--(?!-)', ur"&ndash;", html)
         html = re.sub(ur'(?<= )---(?= )', ur"&mdash;", html)
         # Smiley
         html = re.sub(ur':\)', ur"&#x263a;", html)
 
-        logger.debug(u"tags are " + str(card.fact.tags) + str(type(card.fact.tags)))
-        logger.debug(u"fixed tags are " + str(reallySplit(card.fact.tags)))
+        logger.debug(u"tags are " + unicode(card.fact.tags) + unicode(type(card.fact.tags)))
+        logger.debug(u"fixed tags are " + unicode(reallySplit(card.fact.tags)))
         if NO_MARKDOWN_TAG not in reallySplit(card.fact.tags):
                 # Can't do this - span doesn't wrap quite the whole side when there are templates
                 #logger.debug("pre strip:\n" + html)

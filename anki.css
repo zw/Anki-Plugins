@@ -34,11 +34,19 @@ h2 {
   font-size:1.5em;
 }
 
-p {
+p, ul, ol, dl {
   max-width:40em;
 }
 
 .code {
   font-family:Courier,monospace;
   font-weight:bold;
+}
+
+code {
+  font-family:Courier,monospace;
+  font-weight:bold;
+  background-color: #f0feff;
+  border-bottom-style: dotted;
+  border-width: thin;
 }
