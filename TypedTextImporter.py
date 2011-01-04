@@ -24,10 +24,10 @@ logger = None
 
 TTI_FILE = u"/Users/zak/stuff/medicine/SRS scratchpad.txt"
 IMPORT_KEY=u"Z"
-YAML_PATH = "/opt/local/Library/Frameworks/Python.framework/Versions/2.6/lib/python2.6/site-packages/"
-
-sys.path.append(YAML_PATH)
-import yaml
+#YAML_PATH = "/opt/local/Library/Frameworks/Python.framework/Versions/2.6/lib/python2.6/site-packages/"
+#
+#sys.path.append(YAML_PATH)
+#import yaml
 
 from anki.errors import ImportFormatError
 import anki.importing
@@ -48,7 +48,8 @@ class TypedTextImporter(anki.importing.Importer):
 
         def doImport(self):
                 random = self.deck.newCardOrder == NEW_CARDS_RANDOM
-                # This gets wiped by needMapper processing if set much earlier than here.
+                # This gets wiped by superclass constructor's needMapper
+                # processing if set in our constructor.
                 self.tagDuplicates = True
                 try:
                         self.fh = open(self.file, "r")
@@ -70,23 +71,23 @@ class TypedTextImporter(anki.importing.Importer):
                         self.deck.setModified()
                 self.fh.close()
 
-        def html_list(self, list, level=0):
-                html = "<ul>"
-                for e in list:
-                        if type(e) is ListType:
-                                html += self.html_list(e, level+1)
-                        elif type(e) is StringType:
-                                html += "<li>%s</li>" % (e)
-                        elif type(e) is DictType and level == 0:
-                                if 't' in e:
-                                        # Explicitly, "- t: include this line outside any list" => break list, insert text, restart list
-                                        html += "</ul><p>%s</p><ul>" % (e['t'])
-                                else:
-                                        # Implicitly, "- signs of gout:" => treat key name as just another list item
-                                        # Allows you to forget about the Yaml-ness, accidentally use a trailing colon and still DWIM
-                                        html += "<li>%s</li>" % (e.popitem()[0])
-                html += "</ul>"
-                return html
+#        def html_list(self, list, level=0):
+#                html = "<ul>"
+#                for e in list:
+#                        if type(e) is ListType:
+#                                html += self.html_list(e, level+1)
+#                        elif type(e) is StringType:
+#                                html += "<li>%s</li>" % (e)
+#                        elif type(e) is DictType and level == 0:
+#                                if 't' in e:
+#                                        # Explicitly, "- t: include this line outside any list" => break list, insert text, restart list
+#                                        html += "</ul><p>%s</p><ul>" % (e['t'])
+#                                else:
+#                                        # Implicitly, "- signs of gout:" => treat key name as just another list item
+#                                        # Allows you to forget about the Yaml-ness, accidentally use a trailing colon and still DWIM
+#                                        html += "<li>%s</li>" % (e.popitem()[0])
+#                html += "</ul>"
+#                return html
 
         def foreignCards(self):
                 "Return a list of foreign cards for importing."
@@ -229,25 +230,11 @@ class TypedTextImporter(anki.importing.Importer):
                                                 self.endOfMultilineFieldMarker = match.group('eof')
                                                 # FIXME: Anki seems to fuck with this if not set to <br/>
                                                 #if match.group('flags') == "b":
-                                                self.multilineEOL = "<br/>"
+                                                #self.multilineEOL = "<br/>"
                                                 #else:
-                                                #self.multilineEOL = "\n"
+                                                self.multilineEOL = "\n"
                                                 # Start off with new empty field, added to as we collect constituent lines
                                                 curCard.fields.append("")
-                                                continue
-                                        # <<Eof
-                                        # so
-                                        # is this
-                                        # Eof
-                                        # =>
-                                        # so\nis this
-                                        match = re.search("^<<(?P<eof>\S+)$", line)
-                                        if match:
-                                                logger.debug("starting <<multiline")
-                                                self.endOfMultilineFieldMarker = match.group('eof')
-                                                self.multilineEOL = "\n"
-                                                # Start off with new blank field, added to as we collect constituent lines
-                                                curCard.fields.append('')
                                                 continue
 
                                         match = re.search("^t:(?P<facttags> .*)$", line)
@@ -257,7 +244,7 @@ class TypedTextImporter(anki.importing.Importer):
                                                 continue
 
                                         # Single-line.
-                                        logger.debug("collecting single line")
+                                        logger.debug("collecting single line into single field")
                                         curCard.fields.append(line)
                                         continue
                                 continue
@@ -273,7 +260,6 @@ class TTIImportDialog(ImportDialog):
         def getFile(self):
                 self.file = TTI_FILE
                 self.modelChooser.hide()
-                self.dialog.tagDuplicates.hide()
                 self.dialog.autoDetect.setShown(False)
                 self.importer = anki.importing.Importers[0]
                 self.importerFunc = TypedTextImporter
