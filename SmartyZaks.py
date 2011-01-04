@@ -1,7 +1,8 @@
 ﻿# -*- coding: utf-8 -*-
 # Translate punctuation according to SmartyZaks rules, which are:
 #    =>   gets translated to    &rarr;
-#    :)   gets translated to    &#x263a; (a smiley character)
+#    <=>  gets translated to    &#x21d4; ("left right double arrow")
+#    :)   gets translated to    &#x263a; (a smiley character, aka "WHITE SMILING FACE")
 
 
 import re
@@ -13,6 +14,7 @@ NO_SMARTYZAKS_TAG = u"notSmartyZaks"
 def formatQA(html, type, cid, mid, fact, tags, cm):
     logger.debug(u"before smartyzaks, html is:\n" + html)
     if NO_SMARTYZAKS_TAG not in tags:
+        html = re.sub(ur"<=>", ur"&#x21d4;", html)
         html = re.sub(ur"(?<=[ >(])=(&gt;|>)(?=[ <])", ur"&rArr;", html)
         html = re.sub(ur':\)', ur"&#x263a;", html)
 
