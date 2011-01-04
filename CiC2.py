@@ -5,8 +5,10 @@
 #  [*= expression *]  will evaluate expression upon fact save
 #  [* chunk *]  will execute chunk upon fact save; any value left in variable 'yield' will be substituted
 #  $foo  will evaluate symbol foo as an expression
-#  $foo!CRP   will be treated just like "$foo CRP" but without the space
+#  $foo.bar   will yield entry 'bar' in table foo, or access member 'bar'
 #  $foo(args)  will invoke foo as a function, passing args
+#
+#  $foo!CRP   will be treated just like "$foo CRP" but without the space
 #  dnl  will discard any characters that might follow it, up to and including a newline, m4-style
 # 
 # Context available to Lua code:
@@ -15,7 +17,6 @@
 #
 # TODO:
 #  $foo[bar]  will yield entry 'bar' in table foo, or access member 'bar'
-#  $foo.bar   will yield entry 'bar' in table foo, or access member 'bar'
 #  $$  will yield a literal dollar (although as $0.02 and bare " $ " both do what you mean, you're unlikely to need it)
 #  CiC.fact will be the Anki 'Fact' object, notably with the facility to pull out fields using CiC.fact["context"]
 #  [!"example"*= expression *]  will evaluate expression upon card review
@@ -66,6 +67,7 @@ def init():
     anki.hooks.addHook("formatQA_0", formatQA)
     global lua
     lua = lupa.LuaRuntime()
+    lua.execute(u"""BEGIN_CARD = {}""")
     lua.execute(u"""package.path = '""" + getLibraryDir() + u"""/?.lua'""")
     for library in getLibraries():
         basename = re.sub(ur"\.lua$", ur"", library)
@@ -92,11 +94,14 @@ def processEscapes(text, QorA, fact, tags, isField=False):
     # being nested in models via CiC.fields.fieldname, but fields don't get to
     # reference each other.
     if not isField:
+        # Run any pre-card hooks.
+        lua.execute(u"""if BEGIN_CARD then for _,f in ipairs(BEGIN_CARD) do f() end end""")
         fieldname2value = dict()
         for (name, valueTuple) in fact.items():
             fieldValue = valueTuple[1]  # Ick
             fieldname2value[name] = processEscapes(fieldValue, QorA, fact, tags, isField=True)
         lua.globals().f = fieldname2value
+
     lua.globals().CiC = {
         u"QorA": QorA,
     }
