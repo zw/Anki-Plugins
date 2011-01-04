@@ -142,6 +142,7 @@ def null(): return ''
 # Could implement CICstart to clear refs and CICstop to produce a list,
 # and have that list hidden unless we mouse over it.
 # For now just use a char and mention it in 'source' field by that char, by hand
+# LUAd
 def ref(text, link = None):
         # small is a hack around Qt's limited CSS support; see http://tinyurl.com/yeuthno
         # would rather use 'em's to measure font relatively
@@ -157,6 +158,7 @@ def prob(text):
 
 # Meaning, not presentation!
 # This should really squirrel the text away and let me calls notes() later.
+# LUAd
 def note(short, long):
         return u'''<span title="%s">%s</span>''' % (long, ref(short))
 
@@ -164,6 +166,7 @@ def note(short, long):
 def hidden(hoverRegionText, hiddenText):
         return u'''<span title="%s">%s</span>''' % (hiddenText, hoverRegionText)
 
+# LUAd
 def fixme(link = None):
         # small is a hack around Qt's limited CSS support; see http://tinyurl.com/yeuthno
         # would rather use em
